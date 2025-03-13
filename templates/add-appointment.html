@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Schedule Appointment - Medical Clinic{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Schedule New Appointment</h2>
+    <a href="{{ url_for('appointments') }}" class="btn btn-secondary">Back to Appointments</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" action="{{ url_for('add_appointment') }}">
+            <div class="mb-3">
+                <label for="patient_id" class="form-label">Select Patient</label>
+                <select class="form-select" id="patient_id" name="patient_id" required>
+                    <option value="">-- Select Patient --</option>
+                    {% for patient in patients %}
+                    <option value="{{ patient.id }}">{{ patient.first_name }} {{ patient.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="date" name="date" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="time" class="form-label">Time</label>
+                    <input type="time" class="form-control" id="time" name="time" required>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="reason" class="form-label">Reason for Visit</label>
+                <input type="text" class="form-control" id="reason" name="reason" required>
+            </div>
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">Schedule Appointment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
