@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuration Initiale{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Bienvenue dans votre application</h4>
+            </div>
+            <div class="card-body">
+                <p class="mb-4">Pour commencer, veuillez configurer votre profil :</p>
+                
+                <form method="post" action="{{ url_for('first_login') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Votre nom complet</label>
+                        <input type="text" class="form-control" name="name" required
+                               placeholder="Dr. Nom Prénom">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nouveau nom d'utilisateur</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nouveau mot de passe</label>
+                        <input type="password" class="form-control" name="new_password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        Commencer à utiliser l'application
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

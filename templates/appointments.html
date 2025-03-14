@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Appointments - Medical Clinic{% endblock %}
+{% block title %}Rendez-vous - Clinique Médicale{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -15,7 +15,7 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>Date & Heure</th>
+                        <th>Date</th>
                         <th>Patient</th>
                         <th>Motif</th>
                         <th>Statut</th>
@@ -25,26 +25,31 @@
                 <tbody>
                     {% for appointment in appointments %}
                     <tr>
-                        <td>{{ appointment.date.strftime('%Y-%m-%d %I:%M %p') }}</td>
+                        <td>{{ appointment.date.strftime('%d/%m/%Y') }}</td>
                         <td>
-                            <a href="{{ url_for('patient_details', patient_id=appointment.patient.id) }}">
-                                {{ appointment.patient.first_name }} {{ appointment.patient.last_name }}
+                            <a href="{{ url_for('patient_details', patient_id=appointment.patient.id) }}" class="text-decoration-none">
+                                {{ appointment.patient.first_name }} {{ appointment.last_name }}
                             </a>
                         </td>
-                        <td>{{ appointment.reason }}</td>
                         <td>
-                            <span class="badge {% if appointment.status == 'completed' %}bg-success{% elif appointment.status == 'cancelled' %}bg-danger{% else %}bg-primary{% endif %}">
-                                {% if appointment.status == 'scheduled' %}
-                                    Planifié
-                                {% elif appointment.status == 'completed' %}
-                                    Terminé
-                                {% elif appointment.status == 'cancelled' %}
-                                    Annulé
-                                {% endif %}
+                            <span class="badge bg-info">
+                                {{ appointment.reason }}
                             </span>
                         </td>
                         <td>
-                            <a href="{{ url_for('update_appointment', appointment_id=appointment.id) }}" class="btn btn-sm btn-warning">Modifier</a>
+                            <span class="badge {% if appointment.status == 'completed' %}bg-success{% elif appointment.status == 'cancelled' %}bg-danger{% else %}bg-primary{% endif %}">
+                                {% if appointment.status == 'scheduled' %}Planifié{% elif appointment.status == 'completed' %}Terminé{% else %}Annulé{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('patient_details', patient_id=appointment.patient.id) }}" class="btn btn-sm btn-info">
+                                    Dossier Patient
+                                </a>
+                                <a href="{{ url_for('update_appointment', appointment_id=appointment.id) }}" class="btn btn-sm btn-warning">
+                                    Modifier RDV
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

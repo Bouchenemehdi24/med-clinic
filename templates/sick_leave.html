@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A5;
+            margin: 1cm;
+        }
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.4;
+            color: #333;
+            max-width: 148mm;
+            font-size: 11pt;
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        .clinic-logo {
+            max-width: 100px;
+            max-height: 50px;
+            margin-bottom: 5px;
+        }
+        .title { 
+            text-align: center; 
+            font-size: 16pt; 
+            margin: 10px 0; 
+            text-transform: uppercase;
+            color: #2c3e50;
+            border-bottom: 1px solid #3498db;
+            padding-bottom: 5px;
+        }
+        .content { 
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .patient-info {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .dates {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .footer { 
+            margin-top: 50px;
+            text-align: right;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .doctor-info { 
+            text-align: right; 
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        {% if app_settings.clinic_logo %}
+        <img src="data:{{ app_settings.logo_mimetype }};base64,{{ app_settings.clinic_logo|b64encode }}"
+             class="clinic-logo">
+        {% endif %}
+        <h2>{{ app_settings.app_name }}</h2>
+        <p>{{ app_settings.clinic_address|nl2br }}</p>
+    </div>
+
+    <div class="doctor-info">
+        <p>Dr. {{ doctor.name }}</p>
+        <p>{{ doctor.speciality }}</p>
+    </div>
+
+    <div class="title">CERTIFICAT D'ARRÊT DE TRAVAIL</div>
+
+    <div class="content">
+        <p>Je soussigné(e), <strong>Dr. {{ doctor.name }}</strong>, certifie avoir examiné ce jour :</p>
+        
+        <div class="patient-info">
+            <p><strong>{{ patient.first_name }} {{ patient.last_name }}</strong></p>
+            <p>Né(e) le : {{ patient.date_of_birth.strftime('%d/%m/%Y') }}</p>
+        </div>
+        
+        <p>Et prescrit un arrêt de travail pour la période suivante :</p>
+        <div class="dates">
+            <p><strong>Du :</strong> {{ start_date.strftime('%d/%m/%Y') }}</p>
+            <p><strong>Au :</strong> {{ end_date.strftime('%d/%m/%Y') }} inclus</p>
+            <p><strong>Soit une durée de :</strong> {{ (end_date - start_date).days + 1 }} jours</p>
+        </div>
+        
+        {% if reason %}
+        <div class="reason">
+            <p><strong>Motif :</strong> {{ reason }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        <p>Fait à _________________, le {{ today.strftime('%d/%m/%Y') }}</p>
+        <p style="margin-top: 50px;">Signature et cachet :</p>
+        <div style="margin-top: 40px; border-top: 1px solid #000; width: 200px; float: right;"></div>
+    </div>
+</body>
+</html>

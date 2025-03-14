@@ -1,58 +1,136 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - Medical Clinic{% endblock %}
+{% block title %}Tableau de Bord - Clinique Médicale{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Tableau de Bord</h2>
-    
-    <!-- Filtres de date -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <button type="submit" name="date_filter" value="today" class="btn btn-primary w-100">Aujourd'hui</button>
-                </div>
-                <div class="col-md-4">
-                    <button type="submit" name="date_filter" value="tomorrow" class="btn btn-outline-primary w-100">Demain</button>
-                </div>
-                <div class="col-md-4">
-                    <input type="date" name="specific_date" class="form-control" onchange="this.form.submit()">
-                </div>
-            </form>
-        </div>
-    </div>
+    <a href="{{ url_for('add_appointment') }}" class="btn btn-primary">Nouveau Rendez-vous</a>
+</div>
 
-    <!-- Liste des rendez-vous -->
-    <div class="card">
-        <div class="card-body">
-            <h4>Rendez-vous {{ date_display }}</h4>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Heure</th>
-                            <th>Patient</th>
-                            <th>Motif</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for appointment in appointments %}
-                        <tr>
-                            <td>{{ appointment.time }}</td>
-                            <td>{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</td>
-                            <td>{{ appointment.reason }}</td>
-                            <td>
-                                <a href="{{ url_for('view_appointment', id=appointment.id) }}" class="btn btn-sm btn-info">Voir</a>
-                                <a href="{{ url_for('edit_appointment', id=appointment.id) }}" class="btn btn-sm btn-primary">Modifier</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('dashboard', date_filter='today') }}" 
+                       class="btn btn-outline-primary {% if date_filter == 'today' %}active{% endif %}">
+                       Aujourd'hui
+                    </a>
+                    <a href="{{ url_for('dashboard', date_filter='tomorrow') }}" 
+                       class="btn btn-outline-primary {% if date_filter == 'tomorrow' %}active{% endif %}">
+                       Demain
+                    </a>
+                    <a href="{{ url_for('dashboard', date_filter='upcoming') }}" 
+                       class="btn btn-outline-primary {% if date_filter == 'upcoming' %}active{% endif %}">
+                       À venir
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <form method="GET" action="{{ url_for('dashboard') }}" class="d-flex flex-column">
+                    <div class="input-group mb-2">
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Rechercher un patient" 
+                               value="{{ request.args.get('search', '') }}">
+                        <input type="date" name="specific_date" class="form-control" 
+                               value="{{ selected_date }}">
+                        <button type="submit" class="btn btn-primary">Rechercher</button>
+                    </div>
+                    {% if error_message %}
+                    <div class="alert alert-danger py-1 mb-0">
+                        {{ error_message }}
+                    </div>
+                    {% endif %}
+                </form>
             </div>
         </div>
     </div>
 </div>
+
+<div class="card">
+    <div class="card-header">
+        <h4>Rendez-vous {{ date_display }}</h4>
+    </div>
+    <div class="card-body">
+        {% if appointments %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Motif</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                    <tr>
+                        <td>
+                            {% if appointment.patient_id %}
+                            <a href="{{ url_for('patient_details', patient_id=appointment.patient.id) }}" class="text-decoration-none">
+                                {{ appointment.patient.first_name }} {{ appointment.patient.last_name }}
+                            </a>
+                            {% elif appointment.temp_patient %}
+                            <span class="text-warning">
+                                {{ appointment.temp_patient.first_name }} {{ appointment.temp_patient.last_name }}
+                                {% if session.get('user_role') == 'doctor' %}
+                                <button class="btn btn-sm btn-success ms-2" 
+                                        onclick="convertToPatient({{ appointment.temp_patient.id }})">
+                                    Ajouter aux patients
+                                </button>
+                                {% endif %}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">Patient non spécifié</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">
+                                {{ appointment.reason }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {% if appointment.status == 'completed' %}bg-success{% elif appointment.status == 'cancelled' %}bg-danger{% else %}bg-primary{% endif %}">
+                                {% if appointment.status == 'scheduled' %}Planifié{% elif appointment.status == 'completed' %}Terminé{% else %}Annulé{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                {% if session.get('user_role') == 'doctor' and appointment.patient_id %}
+                                <a href="{{ url_for('patient_details', patient_id=appointment.patient_id) }}" class="btn btn-sm btn-info">
+                                    Dossier Patient
+                                </a>
+                                {% endif %}
+                                <a href="{{ url_for('update_appointment', appointment_id=appointment.id) }}" class="btn btn-sm btn-warning">
+                                    Modifier
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>Aucun rendez-vous programmé pour cette date.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function convertToPatient(tempId) {
+    if (confirm('Voulez-vous ajouter ce patient à la liste permanente ?')) {
+        fetch(`/temporary_patient/${tempId}/convert`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }).then(() => window.location.reload());
+    }
+}
+</script>
 {% endblock %}

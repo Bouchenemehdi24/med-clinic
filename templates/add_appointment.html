@@ -1,47 +1,271 @@
 {% extends 'base.html' %}
 
-{% block title %}Schedule Appointment - Medical Clinic{% endblock %}
+{% block title %}Nouveau Rendez-vous{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Schedule New Appointment</h2>
-    <a href="{{ url_for('appointments') }}" class="btn btn-secondary">Back to Appointments</a>
-</div>
-
 <div class="card">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Nouveau Rendez-vous</h3>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-light">Retour</a>
+        </div>
+    </div>
     <div class="card-body">
-        <form method="post" action="{{ url_for('add_appointment') }}">
-            <div class="mb-3">
-                <label for="patient_id" class="form-label">Select Patient</label>
-                <select class="form-select" id="patient_id" name="patient_id" required>
-                    <option value="">-- Select Patient --</option>
+        <!-- Filtres pour la recherche de patients -->
+        <div id="patient-filters" class="mb-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" id="search-patient" class="form-control" 
+                               placeholder="Rechercher un patient...">
+                        <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select id="filter-by" class="form-select">
+                        <option value="all">Tous les patients</option>
+                        <option value="recent">Patients récents</option>
+                        <option value="pending">En attente de RDV</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" id="appointmentForm" class="needs-validation" novalidate>
+            <!-- Type de patient -->
+            <div class="mb-4">
+                <label class="form-label h5">Type de patient</label>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card h-100 cursor-pointer patient-type-card" data-type="existing">
+                            <div class="card-body text-center">
+                                <i class="fas fa-user-check fa-3x mb-2 text-primary"></i>
+                                <h5>Patient Existant</h5>
+                                <p class="text-muted mb-0">Sélectionner un patient de la base de données</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 cursor-pointer patient-type-card" data-type="new">
+                            <div class="card-body text-center">
+                                <i class="fas fa-user-plus fa-3x mb-2 text-success"></i>
+                                <h5>Nouveau Patient</h5>
+                                <p class="text-muted mb-0">Créer un nouveau dossier patient</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="patient_type" id="patient_type" value="existing">
+            </div>
+
+            <!-- Sélection du patient existant -->
+            <div id="existing_patient_form" class="mb-4">
+                <label for="patient_id" class="form-label h5">Sélectionner un patient</label>
+                <select class="form-select form-select-lg" id="patient_id" name="patient_id" required>
+                    <option value="">-- Choisir un patient --</option>
                     {% for patient in patients %}
-                    <option value="{{ patient.id }}">{{ patient.first_name }} {{ patient.last_name }}</option>
+                    <option value="{{ patient.id }}" data-phone="{{ patient.phone }}" 
+                            data-dob="{{ patient.date_of_birth.strftime('%d/%m/%Y') }}">
+                        {{ patient.first_name }} {{ patient.last_name }}
+                    </option>
                     {% endfor %}
                 </select>
+                <div id="patient_info" class="mt-2 d-none">
+                    <div class="alert alert-info">
+                        <p class="mb-1"><strong>Téléphone:</strong> <span id="patient_phone"></span></p>
+                        <p class="mb-0"><strong>Date de naissance:</strong> <span id="patient_dob"></span></p>
+                    </div>
+                </div>
             </div>
+
+            <!-- Nouveau patient -->
+            <div id="new_patient_form" class="mb-4 d-none">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Prénom*</label>
+                        <input type="text" class="form-control form-control-lg" name="first_name">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nom*</label>
+                        <input type="text" class="form-control form-control-lg" name="last_name">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Date de naissance*</label>
+                        <input type="date" class="form-control form-control-lg" name="date_of_birth" 
+                               max="{{ today }}" min="{{ min_birth_date.strftime('%Y-%m-%d') }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Téléphone</label>
+                        <input type="tel" class="form-control form-control-lg" name="phone">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Date -->
+            <div class="mb-4">
+                <label class="form-label h5">Date du rendez-vous*</label>
+                <input type="date" class="form-control form-control-lg" name="date" 
+                       min="{{ today }}" required>
+            </div>
+
+            <!-- Motif et Notes -->
             <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="date" class="form-label">Date</label>
-                    <input type="date" class="form-control" id="date" name="date" required>
+                <div class="col-md-6 mb-4">
+                    <label class="form-label h5">Motif de consultation*</label>
+                    <select class="form-select form-select-lg" name="reason" required>
+                        <option value="">Choisir un motif</option>
+                        {% for reason in reasons %}
+                        <option value="{{ reason }}">{{ reason }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="time" class="form-label">Time</label>
-                    <input type="time" class="form-control" id="time" name="time" required>
+                <div class="col-md-6 mb-4">
+                    <label class="form-label h5">Notes</label>
+                    <textarea class="form-control" name="notes" rows="3" 
+                              placeholder="Notes additionnelles sur le rendez-vous..."></textarea>
                 </div>
             </div>
-            <div class="mb-3">
-                <label for="reason" class="form-label">Reason for Visit</label>
-                <input type="text" class="form-control" id="reason" name="reason" required>
-            </div>
-            <div class="mb-3">
-                <label for="notes" class="form-label">Notes</label>
-                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
-            </div>
+
             <div class="text-end">
-                <button type="submit" class="btn btn-primary">Schedule Appointment</button>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-calendar-check"></i> Confirmer le rendez-vous
+                </button>
             </div>
         </form>
     </div>
 </div>
+
+<style>
+.cursor-pointer {
+    cursor: pointer;
+}
+.patient-type-card {
+    transition: all 0.3s ease;
+}
+.patient-type-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.patient-type-card.selected {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const patientTypeCards = document.querySelectorAll('.patient-type-card');
+    const patientTypeInput = document.getElementById('patient_type');
+    const existingPatientForm = document.getElementById('existing_patient_form');
+    const newPatientForm = document.getElementById('new_patient_form');
+    const patientSelect = document.getElementById('patient_id');
+    const patientInfo = document.getElementById('patient_info');
+    const patientPhone = document.getElementById('patient_phone');
+    const patientDOB = document.getElementById('patient_dob');
+
+    // Gestion du type de patient
+    patientTypeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            patientTypeCards.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            const type = this.dataset.type;
+            patientTypeInput.value = type;
+            
+            if (type === 'existing') {
+                existingPatientForm.classList.remove('d-none');
+                newPatientForm.classList.add('d-none');
+                patientSelect.required = true;
+            } else {
+                existingPatientForm.classList.add('d-none');
+                newPatientForm.classList.remove('d-none');
+                patientSelect.required = false;
+            }
+        });
+    });
+
+    // Affichage des informations du patient sélectionné
+    patientSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (this.value) {
+            patientPhone.textContent = selectedOption.dataset.phone || 'Non renseigné';
+            patientDOB.textContent = selectedOption.dataset.dob;
+            patientInfo.classList.remove('d-none');
+        } else {
+            patientInfo.classList.add('d-none');
+        }
+    });
+
+    // Validation du formulaire
+    const form = document.getElementById('appointmentForm');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+
+    // Sélectionner la première carte par défaut
+    patientTypeCards[0].click();
+
+    // Recherche en temps réel
+    const searchInput = document.getElementById('search-patient');
+    const clearSearch = document.getElementById('clear-search');
+    const originalOptions = [...patientSelect.options];
+
+    searchInput.addEventListener('input', function() {
+        const searchText = this.value.toLowerCase();
+        const filterBy = document.getElementById('filter-by').value;
+        filterPatients(searchText, filterBy);
+    });
+
+    document.getElementById('filter-by').addEventListener('change', function() {
+        const searchText = searchInput.value.toLowerCase();
+        filterPatients(searchText, this.value);
+    });
+
+    clearSearch.addEventListener('click', function() {
+        searchInput.value = '';
+        document.getElementById('filter-by').value = 'all';
+        resetPatientList();
+    });
+
+    function filterPatients(searchText, filterType) {
+        // Réinitialiser la liste
+        patientSelect.innerHTML = '<option value="">-- Choisir un patient --</option>';
+        
+        originalOptions.forEach(option => {
+            if (option.value === '') return; // Ignorer l'option par défaut
+
+            const matchesSearch = option.text.toLowerCase().includes(searchText);
+            let matchesFilter = true;
+
+            // Appliquer les filtres supplémentaires
+            if (filterType === 'recent') {
+                // Exemple : vérifier si le patient a eu un RDV dans les 30 derniers jours
+                // Cette logique devrait être adaptée selon vos besoins
+                matchesFilter = true; // À implémenter selon votre logique
+            } else if (filterType === 'pending') {
+                // Exemple : vérifier si le patient a des RDV en attente
+                matchesFilter = true; // À implémenter selon votre logique
+            }
+
+            if (matchesSearch && matchesFilter) {
+                patientSelect.appendChild(option.cloneNode(true));
+            }
+        });
+    }
+
+    function resetPatientList() {
+        patientSelect.innerHTML = '';
+        originalOptions.forEach(option => {
+            patientSelect.appendChild(option.cloneNode(true));
+        });
+    }
+});
+</script>
 {% endblock %}

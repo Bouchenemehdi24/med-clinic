@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier Patient - Clinique Médicale{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Modifier Patient</h2>
+    <div>
+        <a href="{{ url_for('patient_details', patient_id=patient.id) }}" class="btn btn-secondary">Retour au Dossier</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            <div class="row mb-3">
+                <div class="col-md-4 mb-3">
+                    <label for="first_name" class="form-label">Prénom*</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name" 
+                           value="{{ patient.first_name }}" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="last_name" class="form-label">Nom de famille*</label>
+                    <input type="text" class="form-control" id="last_name" name="last_name" 
+                           value="{{ patient.last_name }}" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="phone" class="form-label">Téléphone</label>
+                    <input type="tel" class="form-control" id="phone" name="phone" 
+                           value="{{ patient.phone }}">
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4 mb-3">
+                    <label for="date_of_birth" class="form-label">Date de naissance*</label>
+                    <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                           value="{{ patient.date_of_birth.strftime('%Y-%m-%d') }}" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="weight" class="form-label">Poids (kg)</label>
+                    <input type="number" step="0.1" class="form-control" id="weight" name="weight" 
+                           value="{{ patient.weight or '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="height" class="form-label">Taille (cm)</label>
+                    <input type="number" step="0.1" class="form-control" id="height" name="height" 
+                           value="{{ patient.height or '' }}">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="medical_history" class="form-label">Antécédents Médicaux</label>
+                <textarea class="form-control" id="medical_history" name="medical_history" rows="4">{{ patient.medical_history or '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="diagnostic" class="form-label">Diagnostic</label>
+                <textarea class="form-control" id="diagnostic" name="diagnostic" rows="3">{{ patient.diagnostic or '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="treatment" class="form-label">Traitement</label>
+                <textarea class="form-control" id="treatment" name="treatment" rows="3">{{ patient.treatment or '' }}</textarea>
+            </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -29,3 +29,11 @@ class Patient(db.Model):
         db.Index('idx_patient_last_name', 'last_name'),
         db.Index('idx_patient_first_name', 'first_name'),
     )
+
+class AppSettings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    app_name = db.Column(db.String(100), nullable=False, default='Clinique Médicale')
+    logo_url = db.Column(db.String(200))
+    clinic_address = db.Column(db.Text)  # Ajout de l'adresse
+    primary_color = db.Column(db.String(20), default='#0d6efd')
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)

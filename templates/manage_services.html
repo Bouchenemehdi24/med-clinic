@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Ajouter un Service</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nom du service*</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Prix (DA)*</label>
+                            <input type="number" class="form-control" id="price" name="price" step="0.01" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Ajouter</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Liste des Services</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Prix</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for service in services %}
+                                <tr id="service-row-{{ service.id }}">
+                                    <td class="service-name">{{ service.name }}</td>
+                                    <td class="service-price">{{ service.price }} DA</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick="editService({{ service.id }})">
+                                            Modifier
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editService(serviceId) {
+    const row = document.getElementById(`service-row-${serviceId}`);
+    const nameCell = row.querySelector('.service-name');
+    const priceCell = row.querySelector('.service-price');
+    const currentName = nameCell.textContent;
+    const currentPrice = priceCell.textContent.replace(' DA', '');
+
+    // Remplacer le contenu par des champs de formulaire
+    nameCell.innerHTML = `<input type="text" class="form-control" value="${currentName}">`;
+    priceCell.innerHTML = `<input type="number" class="form-control" value="${currentPrice}" step="0.01">`;
+    
+    // Remplacer le bouton Modifier par Sauvegarder
+    const actionCell = row.querySelector('td:last-child');
+    actionCell.innerHTML = `
+        <button class="btn btn-sm btn-success me-2" onclick="saveService(${serviceId})">
+            Sauvegarder
+        </button>
+        <button class="btn btn-sm btn-secondary" onclick="cancelEdit(${serviceId}, '${currentName}', '${currentPrice}')">
+            Annuler
+        </button>
+    `;
+}
+
+function saveService(serviceId) {
+    const row = document.getElementById(`service-row-${serviceId}`);
+    const newName = row.querySelector('.service-name input').value;
+    const newPrice = row.querySelector('.service-price input').value;
+
+    fetch('/services/update-service', {  // Updated endpoint
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            id: serviceId,
+            name: newName,
+            price: newPrice
+        })
+    }).then(response => {
+        if (response.ok) {
+            window.location.reload();
+        }
+    });
+}
+
+function cancelEdit(serviceId, name, price) {
+    const row = document.getElementById(`service-row-${serviceId}`);
+    row.querySelector('.service-name').textContent = name;
+    row.querySelector('.service-price').textContent = `${price} DA`;
+    row.querySelector('td:last-child').innerHTML = `
+        <button class="btn btn-sm btn-warning" onclick="editService(${serviceId})">
+            Modifier
+        </button>
+    `;
+}
+</script>
+{% endblock %}

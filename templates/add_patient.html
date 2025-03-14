@@ -1,73 +1,221 @@
 {% extends 'base.html' %}
 
-{% block title %}Ajouter Patient - Clinique Médicale{% endblock %}
+{% block title %}Ajouter un Patient - Clinique Médicale{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Add New Patient</h2>
-    <a href="{{ url_for('patients') }}" class="btn btn-secondary">Back to Patients</a>
+    <h2>Nouveau Patient</h2>
+    <a href="{{ url_for('patients') }}" class="btn btn-secondary">Retour à la liste</a>
 </div>
 
 <div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Informations du Patient</h4>
+    </div>
     <div class="card-body">
         <form method="post" action="{{ url_for('add_patient') }}" id="patientForm" onsubmit="return validateForm()">
+            <!-- Informations Personnelles -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Informations Personnelles</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="first_name" class="form-label">Prénom <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" 
+                                           pattern="[A-Za-zÀ-ÿ\s-]+" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="last_name" class="form-label">Nom de famille <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" 
+                                           pattern="[A-Za-zÀ-ÿ\s-]+" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="date_of_birth" class="form-label">Date de naissance <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                           max="{{ today }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label">Téléphone</label>
+                                    <input type="text" class="form-control" id="phone" name="phone" 
+                                           placeholder="Ex: 06 XX XX XX XX">
+                                    <small class="text-muted">Format: 10 chiffres</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Informations Physiques</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="weight" class="form-label">Poids (kg)</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.1" class="form-control" id="weight" name="weight" 
+                                               placeholder="Ex: 70.5">
+                                        <span class="input-group-text">kg</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="height" class="form-label">Taille (cm)</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.1" class="form-control" id="height" name="height" 
+                                               placeholder="Ex: 170">
+                                        <span class="input-group-text">cm</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="medical_history" class="form-label">Antécédents Médicaux</label>
+                                <textarea class="form-control" id="medical_history" name="medical_history" rows="4"
+                                        placeholder="Décrivez les antécédents médicaux importants..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consultation et Services -->
             <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="first_name" class="form-label">Prénom*</label>
-                    <input type="text" class="form-control" id="first_name" name="first_name" pattern="[A-Za-zÀ-ÿ\s-]+" required 
-                           title="Lettres, espaces et tirets uniquement">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">Première Consultation</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="diagnostic" class="form-label">Diagnostic</label>
+                                <textarea class="form-control" id="diagnostic" name="diagnostic" rows="3"
+                                        placeholder="Entrez le diagnostic initial..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="treatment" class="form-label">Traitement</label>
+                                <textarea class="form-control" id="treatment" name="treatment" rows="3"
+                                        placeholder="Prescrivez le traitement..."></textarea>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="last_name" class="form-label">Nom de famille*</label>
-                    <input type="text" class="form-control" id="last_name" name="last_name" pattern="[A-Za-zÀ-ÿ\s-]+" required
-                           title="Lettres, espaces et tirets uniquement">
+
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">Services à Facturer</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for service in services %}
+                            <div class="form-check mb-2 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <input class="form-check-input service-checkbox" type="checkbox" 
+                                           name="initial_services" value="{{ service.id }}"
+                                           id="service_{{ service.id }}"
+                                           data-price="{{ service.price }}">
+                                    <label class="form-check-label" for="service_{{ service.id }}">
+                                        {{ service.name }}
+                                    </label>
+                                </div>
+                                <span class="badge bg-secondary">{{ service.price }} DA</span>
+                            </div>
+                            {% endfor %}
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Total:</h6>
+                                <h5 class="mb-0" id="total-amount">0 DA</h5>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="date_of_birth" class="form-label">Date de Naissance*</label>
-                    <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
-                           max="{{ today }}" required>
-                    <div class="invalid-feedback">Date de naissance invalide</div>
+
+            <!-- Consultation initiale -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Consultation Initiale</h5>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="phone" class="form-label">Phone Number</label>
-                    <input type="text" class="form-control" id="phone" name="phone" required>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Symptômes</label>
+                            <textarea class="form-control" name="symptoms" rows="3"
+                                    placeholder="Description des symptômes..."></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Diagnostic</label>
+                            <textarea class="form-control" name="diagnostic" rows="3"
+                                    placeholder="Diagnostic initial..."></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Traitement</label>
+                            <textarea class="form-control" name="treatment" rows="3"
+                                    placeholder="Traitement prescrit..."></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Notes additionnelles</label>
+                            <textarea class="form-control" name="notes" rows="2"
+                                    placeholder="Notes supplémentaires..."></textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="weight" class="form-label">Poids (kg)</label>
-                    <input type="number" step="0.1" class="form-control" id="weight" name="weight" placeholder="Poids en kilogrammes">
+
+            <!-- Services -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Services et Paiement</h5>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="height" class="form-label">Taille (cm)</label>
-                    <input type="number" step="0.1" class="form-control" id="height" name="height" placeholder="Taille en centimètres">
+                <div class="card-body">
+                    {% for service in services %}
+                    <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <input type="checkbox" class="form-check-input" 
+                                   name="initial_services" value="{{ service.id }}"
+                                   data-price="{{ service.price }}">
+                            <label class="form-check-label">{{ service.name }}</label>
+                        </div>
+                        <span class="text-muted">{{ service.price }} DA</span>
+                    </div>
+                    {% endfor %}
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Total:</h6>
+                        <h5 class="mb-0" id="services-total">0 DA</h5>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" name="paid" id="paid">
+                        <label class="form-check-label" for="paid">Marquer comme payé</label>
+                    </div>
                 </div>
             </div>
-            <div class="mb-3">
-                <label for="medical_history" class="form-label">Antécédents Médicaux</label>
-                <textarea class="form-control" id="medical_history" name="medical_history" rows="4"></textarea>
+
+            <!-- Prochain RDV -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">Prochain Rendez-vous</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="next_appointment_date" class="form-label">Date du prochain rendez-vous</label>
+                            <input type="date" class="form-control" id="next_appointment_date" 
+                                   name="next_appointment_date" min="{{ today }}">
+                            <small class="text-muted">Optionnel</small>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <hr class="my-4">
-            <h4>Première Consultation</h4>
-            
-            <div class="mb-3">
-                <label for="first_consultation_diagnostic" class="form-label">Diagnostic</label>
-                <textarea class="form-control" id="first_consultation_diagnostic" name="first_consultation_diagnostic" rows="3" required></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="first_consultation_treatment" class="form-label">Traitement</label>
-                <textarea class="form-control" id="first_consultation_treatment" name="first_consultation_treatment" rows="3"></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="first_consultation_notes" class="form-label">Notes de Consultation</label>
-                <textarea class="form-control" id="first_consultation_notes" name="first_consultation_notes" rows="3"></textarea>
-            </div>
-            
+
             <div class="text-end">
-                <button type="submit" class="btn btn-primary">Enregistrer Patient et Consultation</button>
+                <button type="reset" class="btn btn-secondary me-2">Réinitialiser</button>
+                <button type="submit" class="btn btn-primary">Enregistrer le Patient</button>
             </div>
         </form>
     </div>
@@ -109,6 +257,17 @@ function validateForm() {
         return false;
     }
 
+    // Validation de la date du prochain rendez-vous
+    const nextAppDate = document.getElementById('next_appointment_date').value;
+    
+    if (nextAppDate) {
+        const nextApp = new Date(nextAppDate);
+        if (nextApp < today) {
+            alert('La date du prochain rendez-vous ne peut pas être dans le passé');
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -124,6 +283,35 @@ document.addEventListener('DOMContentLoaded', function() {
         let value = e.target.value.replace(/\D/g, '');
         if (value.length > 10) value = value.substr(0, 10);
         e.target.value = value.replace(/(\d{2})(?=\d)/g, '$1 ');
+    });
+
+    // Mise à jour du total des services
+    function updateTotal() {
+        let total = 0;
+        document.querySelectorAll('.service-checkbox:checked').forEach(checkbox => {
+            total += parseFloat(checkbox.dataset.price);
+        });
+        document.getElementById('total-amount').textContent = total + ' DA';
+    }
+
+    document.querySelectorAll('.service-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateTotal);
+    });
+
+    // Formatage automatique du numéro de téléphone
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 10) value = value.substr(0, 10);
+        
+        // Format: 06 XX XX XX XX
+        const matches = value.match(/(\d{2})?(\d{2})?(\d{2})?(\d{2})?(\d{2})?/);
+        const formatted = matches
+            .slice(1)
+            .filter(group => group !== undefined)
+            .join(' ');
+            
+        e.target.value = formatted;
     });
 });
 </script>

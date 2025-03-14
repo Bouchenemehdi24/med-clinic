@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Profil et Paramètres{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Profile Settings -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Paramètres de Connexion</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <input type="hidden" name="action" value="update_profile">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nom complet</label>
+                        <input type="text" class="form-control" name="name" 
+                               value="{{ user.name }}" required
+                               placeholder="Dr. Nom Prénom">
+                        <small class="text-muted">Ce nom sera affiché dans toute l'application</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Spécialité</label>
+                        <input type="text" class="form-control" name="speciality" 
+                               value="{{ user.speciality }}" required
+                               placeholder="Ex: Pneumologue, Allergologue, etc."
+                               pattern="[A-Za-zÀ-ÿ\s-]+"
+                               title="Veuillez entrer une spécialité valide (lettres et espaces uniquement)">
+                        <small class="text-muted">Entrez votre domaine de spécialisation</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nom d'utilisateur</label>
+                        <input type="text" class="form-control" name="username" 
+                               value="{{ user.username }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Mot de passe actuel</label>
+                        <input type="password" class="form-control" name="current_password">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nouveau mot de passe</label>
+                        <input type="password" class="form-control" name="new_password">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        Mettre à jour
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Settings -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Paramètres de l'Application</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <input type="hidden" name="action" value="update_settings">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nom de la Clinique</label>
+                        <input type="text" class="form-control" name="app_name" 
+                               value="{{ settings.app_name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Couleur Principale</label>
+                        <input type="color" class="form-control" name="primary_color" 
+                               value="{{ settings.primary_color }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Adresse de la Clinique</label>
+                        <textarea class="form-control" name="clinic_address" rows="2">{{ settings.clinic_address }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Logo de la Clinique</label>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if settings.clinic_logo %}
+                            <img src="data:{{ settings.logo_mimetype }};base64,{{ settings.clinic_logo|b64encode }}" 
+                                 class="img-thumbnail" style="max-height: 100px">
+                            {% endif %}
+                            <input type="file" class="form-control" name="clinic_logo" accept="image/*">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">
+                        Enregistrer les changements
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

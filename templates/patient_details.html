@@ -1,128 +1,382 @@
 {% extends 'base.html' %}
 
-{% block title %}Patient Details - Medical Clinic{% endblock %}
+{% block title %}{{ patient.first_name }} {{ patient.last_name }} - Dossier Médical{% endblock %}
 
 {% block content %}
+<!-- En-tête du dossier -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Patient Details</h2>
-    <a href="{{ url_for('add_appointment') }}" class="btn btn-primary">Schedule Appointment</a>
+    <div>
+        <h2 class="mb-0">{{ patient.first_name }} {{ patient.last_name }}</h2>
+        <p class="text-muted mb-0">Dossier #{{ patient.id }}</p>
+    </div>
+    <div class="btn-group">
+        <a href="{{ url_for('edit_patient', patient_id=patient.id) }}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Modifier
+        </a>
+        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#sickLeaveModal">
+            <i class="fas fa-file-medical"></i> Arrêt de Travail
+        </button>
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#chronicDiseaseModal">
+            <i class="fas fa-heartbeat"></i> Certificat Maladie Chronique
+        </button>
+        <a href="{{ url_for('add_appointment') }}?patient_id={{ patient.id }}" class="btn btn-primary">
+            <i class="fas fa-calendar-plus"></i> Nouveau RDV
+        </a>
+    </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">Personal Information</h5>
+<div class="row g-4">
+    <!-- Informations de base -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0"><i class="fas fa-user-circle"></i> Informations Générales</h5>
             </div>
             <div class="card-body">
-                <h3>{{ patient.first_name }} {{ patient.last_name }}</h3>
-                <p><strong>Date of Birth:</strong> {{ patient.date_of_birth.strftime('%Y-%m-%d') }} (Age: {{ (today - patient.date_of_birth).days // 365 }})</p>
-                <p><strong>Phone:</strong> {{ patient.phone }}</p>
-                <p><strong>Email:</strong> {{ patient.email or 'Not provided' }}</p>
-                <p><strong>Address:</strong> {{ patient.address or 'Not provided' }}</p>
+                <div class="patient-info">
+                    <p><i class="fas fa-birthday-cake"></i> <strong>Né(e) le:</strong> {{ patient.date_of_birth.strftime('%d/%m/%Y') }}
+                        <span class="badge {% if (today - patient.date_of_birth).days < 365 %}bg-info{% elif (today - patient.date_of_birth).days < 5475 %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ ((today - patient.date_of_birth).days // 365) }} ans
+                        </span>
+                    </p>
+                    <p><i class="fas fa-phone"></i> <strong>Téléphone:</strong> 
+                        {% if patient.phone %}
+                            <a href="tel:{{ patient.phone }}">{{ patient.phone }}</a>
+                        {% else %}
+                            <span class="text-muted">Non renseigné</span>
+                        {% endif %}
+                    </p>
+                    {% if next_appointment %}
+                    <p>
+                        <i class="fas fa-calendar-alt"></i> <strong>Prochain RDV:</strong> 
+                        <span class="badge bg-primary">{{ next_appointment.date.strftime('%d/%m/%Y') }}</span>
+                        <small class="text-muted">({{ next_appointment.reason }})</small>
+                    </p>
+                    {% endif %}
+                </div>
 
-                <!-- Physical Information Section -->
-                <div class="mt-3">
-                    <h5>Physical Information</h5>
-                    <div class="row">
-                        {% if patient.weight %}
-                        <div class="col-md-4">
-                            <p><strong>Weight:</strong> {{ patient.weight }} kg</p>
-                        </div>
-                        {% endif %}
-                        
-                        {% if patient.height %}
-                        <div class="col-md-4">
-                            <p><strong>Height:</strong> {{ patient.height }} cm</p>
-                        </div>
-                        {% endif %}
-                        
-                        {% if patient.bmi %}
-                        <div class="col-md-4">
-                            <p>
-                                <strong>BMI:</strong> {{ patient.bmi }} 
-                                <span class="badge {% if patient.bmi_category == 'Normal weight' %}bg-success{% elif patient.bmi_category == 'Underweight' %}bg-warning{% else %}bg-danger{% endif %}">
-                                    {{ patient.bmi_category }}
-                                </span>
-                            </p>
-                        </div>
+                <!-- Mesures physiques -->
+                <div class="mt-4">
+                    <h6 class="border-bottom pb-2">Mesures Physiques</h6>
+                    <div class="row g-3">
+                        {% if patient.weight or patient.height %}
+                            <div class="col-6">
+                                <div class="small-stat">
+                                    <span class="stat-label">Poids</span>
+                                    <span class="stat-value">{{ patient.weight|round(1) if patient.weight else '-' }} kg</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small-stat">
+                                    <span class="stat-label">Taille</span>
+                                    <span class="stat-value">{{ patient.height|round(1) if patient.height else '-' }} cm</span>
+                                </div>
+                            </div>
+                            {% if patient.bmi %}
+                            <div class="col-12">
+                                <div class="bmi-indicator p-2 rounded">
+                                    <h6 class="mb-1">IMC: {{ patient.bmi }}</h6>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar bg-{{ 'success' if patient.bmi_category == 'Normal weight' else 'warning' if patient.bmi_category == 'Underweight' else 'danger' }}" 
+                                             role="progressbar" 
+                                             style="width: {{ (patient.bmi/40)*100 }}%">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">{{ patient.bmi_category }}</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="col-12">
+                                <p class="text-muted small">Aucune mesure enregistrée</p>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card mb-4">
+
+    <!-- Antécédents et Notes -->
+    <div class="col-md-8">
+        <div class="card h-100">
             <div class="card-header bg-warning">
-                <h5 class="mb-0">Medical History</h5>
+                <h5 class="card-title mb-0"><i class="fas fa-notes-medical"></i> Antécédents Médicaux</h5>
             </div>
             <div class="card-body">
-                <p>{{ patient.medical_history or 'No medical history recorded.' }}</p>
+                {% if patient.medical_history %}
+                    <div class="medical-history p-3 bg-light rounded">
+                        {{ patient.medical_history|nl2br }}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Aucun antécédent médical enregistré
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-header">
-        <h4>Première Consultation</h4>
-    </div>
-    <div class="card-body">
-        <div class="mb-3">
-            <label class="fw-bold">Diagnostic:</label>
-            <p>{{ patient.first_consultation_diagnostic or 'Non renseigné' }}</p>
+<!-- Historique des Consultations -->
+<div class="card mt-4">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0"><i class="fas fa-history"></i> Historique des Consultations</h5>
+        <div class="btn-group">
+            <button class="btn btn-light btn-sm" onclick="printHistory()">
+                <i class="fas fa-print"></i> Imprimer
+            </button>
+            <a href="{{ url_for('add_appointment') }}?patient_id={{ patient.id }}" class="btn btn-light btn-sm">
+                <i class="fas fa-plus"></i> Nouvelle Consultation
+            </a>
         </div>
-        <div class="mb-3">
-            <label class="fw-bold">Traitement:</label>
-            <p>{{ patient.first_consultation_treatment or 'Non renseigné' }}</p>
-        </div>
-        <div class="mb-3">
-            <label class="fw-bold">Notes:</label>
-            <p>{{ patient.first_consultation_notes or 'Non renseigné' }}</p>
-        </div>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">Appointment History</h5>
     </div>
     <div class="card-body">
         {% if appointments %}
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Doctor</th>
-                        <th>Reason</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for appointment in appointments %}
-                    <tr>
-                        <td>{{ appointment.date.strftime('%Y-%m-%d %I:%M %p') }}</td>
-                        <td>{{ appointment.doctor.name }}</td>
-                        <td>{{ appointment.reason }}</td>
-                        <td>
-                            <span class="badge {% if appointment.status == 'completed' %}bg-success{% elif appointment.status == 'cancelled' %}bg-danger{% else %}bg-primary{% endif %}">
-                                {{ appointment.status }}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="{{ url_for('update_appointment', appointment_id=appointment.id) }}" class="btn btn-sm btn-warning">Update</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="timeline">
+            {% for appointment in appointments|selectattr('consultation')|sort(attribute='date', reverse=true) %}
+            <div class="consultation-item mb-4">
+                <div class="consultation-header bg-light p-3 rounded-top border">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            {% if appointment.consultation.consultation_order == 1 %}
+                            <div>
+                                <span class="badge bg-info">Patient ajouté le {{ appointment.consultation.date.strftime('%d/%m/%Y') }}</span>
+                                {% if appointment.date.date() != appointment.consultation.date.date() %}
+                                <span class="badge bg-primary ms-2">RDV prévu le {{ appointment.date.strftime('%d/%m/%Y') }}</span>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="badge bg-info">Consultation #{{ appointment.consultation.consultation_order }}</span>
+                            {% endif %}
+                        </h5>
+                        <span class="badge {% if appointment.status == 'completed' %}bg-success{% else %}bg-warning{% endif %}">
+                            {{ 'Terminée' if appointment.status == 'completed' else 'En attente' }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="consultation-body border border-top-0 p-3 rounded-bottom">
+                    <div class="row g-3">
+                        <!-- Symptômes -->
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0"><i class="fas fa-notes-medical"></i> Symptômes</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if appointment.consultation.symptoms %}
+                                        {{ appointment.consultation.symptoms|nl2br }}
+                                    {% else %}
+                                        <span class="text-muted">Aucun symptôme enregistré</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Diagnostic -->
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0"><i class="fas fa-stethoscope"></i> Diagnostic</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if appointment.consultation.diagnostic %}
+                                        {{ appointment.consultation.diagnostic|nl2br }}
+                                    {% else %}
+                                        <span class="text-muted">Aucun diagnostic enregistré</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Traitement -->
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0"><i class="fas fa-pills"></i> Traitement</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if appointment.consultation.treatment %}
+                                        {{ appointment.consultation.treatment|nl2br }}
+                                    {% else %}
+                                        <span class="text-muted">Aucun traitement prescrit</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Services et Paiement -->
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0"><i class="fas fa-file-invoice"></i> Services & Paiement</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if appointment.consultation.payment %}
+                                        <div class="services-list mb-2">
+                                            {% for service in appointment.consultation.payment.services %}
+                                                <span class="badge bg-secondary me-1">{{ service.name }}</span>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="payment-status">
+                                            <strong>Total:</strong> {{ appointment.consultation.payment.amount }} DA
+                                            <span class="badge {% if appointment.consultation.payment.paid %}bg-success{% else %}bg-warning{% endif %} ms-2">
+                                                {{ 'Payé' if appointment.consultation.payment.paid else 'En attente' }}
+                                            </span>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">Aucun service facturé</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if appointment.consultation.notes %}
+                    <div class="mt-3">
+                        <div class="alert alert-info">
+                            <h6 class="mb-1">Notes additionnelles:</h6>
+                            {{ appointment.consultation.notes|nl2br }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
         </div>
         {% else %}
-        <p>No appointment history for this patient.</p>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Aucune consultation enregistrée
+        </div>
         {% endif %}
     </div>
 </div>
+
+<!-- Modal Arrêt de Travail -->
+<div class="modal fade" id="sickLeaveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Générer un Arrêt de Travail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('generate_sick_leave', patient_id=patient.id) }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Date de début</label>
+                        <input type="date" class="form-control" name="start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date de fin</label>
+                        <input type="date" class="form-control" name="end_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Motif (optionnel)</label>
+                        <textarea class="form-control" name="reason" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Générer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Maladie Chronique -->
+<div class="modal fade" id="chronicDiseaseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Certificat de Maladie Chronique</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('generate_chronic_disease', patient_id=patient.id) }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Maladie Chronique</label>
+                        <input type="text" class="form-control" name="disease" required
+                               placeholder="Ex: Diabète Type 2, Hypertension artérielle...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date de début de la maladie</label>
+                        <input type="date" class="form-control" name="disease_start" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes complémentaires (optionnel)</label>
+                        <textarea class="form-control" name="notes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Générer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Style personnalisé -->
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 40px;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+}
+
+.consultation-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.small-stat {
+    text-align: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #212529;
+}
+
+.bmi-indicator {
+    background: #f8f9fa;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function printHistory() {
+    window.print();
+}
+</script>
 {% endblock %}

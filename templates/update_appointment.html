@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier Rendez-vous - Clinique Médicale{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Info Header -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 class="mb-0">Consultation - {{ appointment.date.strftime('%d/%m/%Y') }}</h3>
+                    <p class="mb-0">Patient: {{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-light me-2">Retour</a>
+                    <a href="{{ url_for('patient_details', patient_id=appointment.patient.id) }}" class="btn btn-info">Dossier</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulaire Principal -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="post">
+                        <!-- Statut -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Statut de la consultation</label>
+                            <select name="status" class="form-select">
+                                <option value="scheduled" {% if appointment.status == 'scheduled' %}selected{% endif %}>En attente</option>
+                                <option value="completed" {% if appointment.status == 'completed' %}selected{% endif %}>Terminée</option>
+                                <option value="cancelled" {% if appointment.status == 'cancelled' %}selected{% endif %}>Annulée</option>
+                            </select>
+                        </div>
+
+                        <!-- Observations -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Symptômes observés</label>
+                            <textarea name="symptoms" class="form-control" rows="3" placeholder="Décrivez les symptômes...">{{ appointment.consultation.symptoms if appointment.consultation else '' }}</textarea>
+                        </div>
+
+                        <!-- Diagnostic et Traitement -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Diagnostic</label>
+                                    <textarea name="diagnostic" class="form-control" rows="3" placeholder="Diagnostic...">{{ appointment.patient.diagnostic or '' }}</textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Traitement prescrit</label>
+                                    <textarea name="treatment" class="form-control" rows="3" placeholder="Traitement...">{{ appointment.patient.treatment or '' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Notes complémentaires</label>
+                            <textarea name="notes" class="form-control" rows="3" placeholder="Notes additionnelles...">{{ appointment.consultation.notes if appointment.consultation else '' }}</textarea>
+                        </div>
+
+                        <!-- Prochain RDV -->
+                        <div class="border rounded p-3 bg-light">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="follow_up_needed" name="follow_up_needed">
+                                <label class="form-check-label fw-bold" for="follow_up_needed">
+                                    Programmer un suivi
+                                </label>
+                            </div>
+                            <div id="follow_up_form" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Date du prochain rendez-vous</label>
+                                        <input type="date" class="form-control" name="next_appointment_date" min="{{ today }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Services et Paiement -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Services et Paiement</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('add_consultation_services', appointment_id=appointment.id) }}">
+                        {% for service in services %}
+                        <div class="form-check d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                            <div>
+                                <input class="form-check-input service-checkbox" type="checkbox" 
+                                       name="services[]" value="{{ service.id }}" 
+                                       data-price="{{ service.price }}"
+                                       id="service_{{ service.id }}">
+                                <label class="form-check-label" for="service_{{ service.id }}">
+                                    {{ service.name }}
+                                </label>
+                            </div>
+                            <span class="text-muted">{{ service.price }} DA</span>
+                        </div>
+                        {% endfor %}
+
+                        <div class="mt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Total</h5>
+                                <h4 id="total-amount" class="text-success mb-0">0 DA</h4>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="paid" id="paid">
+                                <label class="form-check-label" for="paid">
+                                    Marquer comme payé
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-save"></i> Enregistrer les services
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+function updateTotal() {
+    let total = 0;
+    document.querySelectorAll('.service-checkbox:checked').forEach(checkbox => {
+        total += parseFloat(checkbox.dataset.price);
+    });
+    document.getElementById('total-amount').textContent = total + ' DA';
+}
+
+document.querySelectorAll('.service-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', updateTotal);
+});
+
+// Afficher/masquer les services pour le prochain rendez-vous
+document.getElementById('follow_up_needed').addEventListener('change', function() {
+    const servicesDiv = document.getElementById('next_appointment_services');
+    servicesDiv.style.display = this.checked ? 'block' : 'none';
+});
+
+// Calculer le total des services du prochain rendez-vous
+function updateNextAppointmentTotal() {
+    let total = 0;
+    document.querySelectorAll('.next-service-checkbox:checked').forEach(checkbox => {
+        total += parseFloat(checkbox.dataset.price);
+    });
+    document.getElementById('next-appointment-total').textContent = total + ' DA';
+}
+
+document.querySelectorAll('.next-service-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', updateNextAppointmentTotal);
+});
+
+document.getElementById('follow_up_needed').addEventListener('change', function() {
+    document.getElementById('follow_up_form').style.display = this.checked ? 'block' : 'none';
+});
+</script>
+{% endblock %}
+{% endblock %}
