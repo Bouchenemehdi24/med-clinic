@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Add Patient - Medical Clinic{% endblock %}
+{% block title %}Ajouter Patient - Clinique Médicale{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -10,43 +10,121 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="post" action="{{ url_for('add_patient') }}">
+        <form method="post" action="{{ url_for('add_patient') }}" id="patientForm" onsubmit="return validateForm()">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label for="first_name" class="form-label">First Name</label>
-                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                    <label for="first_name" class="form-label">Prénom*</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name" pattern="[A-Za-zÀ-ÿ\s-]+" required 
+                           title="Lettres, espaces et tirets uniquement">
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label for="last_name" class="form-label">Last Name</label>
-                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                    <label for="last_name" class="form-label">Nom de famille*</label>
+                    <input type="text" class="form-control" id="last_name" name="last_name" pattern="[A-Za-zÀ-ÿ\s-]+" required
+                           title="Lettres, espaces et tirets uniquement">
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label for="date_of_birth" class="form-label">Date of Birth</label>
-                    <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
+                    <label for="date_of_birth" class="form-label">Date de Naissance*</label>
+                    <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                           max="{{ today }}" required>
+                    <div class="invalid-feedback">Date de naissance invalide</div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="phone" class="form-label">Phone Number</label>
                     <input type="text" class="form-control" id="phone" name="phone" required>
                 </div>
             </div>
-            <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="weight" class="form-label">Poids (kg)</label>
+                    <input type="number" step="0.1" class="form-control" id="weight" name="weight" placeholder="Poids en kilogrammes">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="height" class="form-label">Taille (cm)</label>
+                    <input type="number" step="0.1" class="form-control" id="height" name="height" placeholder="Taille en centimètres">
+                </div>
             </div>
             <div class="mb-3">
-                <label for="address" class="form-label">Address</label>
-                <textarea class="form-control" id="address" name="address" rows="2"></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="medical_history" class="form-label">Medical History</label>
+                <label for="medical_history" class="form-label">Antécédents Médicaux</label>
                 <textarea class="form-control" id="medical_history" name="medical_history" rows="4"></textarea>
             </div>
+            
+            <hr class="my-4">
+            <h4>Première Consultation</h4>
+            
+            <div class="mb-3">
+                <label for="first_consultation_diagnostic" class="form-label">Diagnostic</label>
+                <textarea class="form-control" id="first_consultation_diagnostic" name="first_consultation_diagnostic" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="first_consultation_treatment" class="form-label">Traitement</label>
+                <textarea class="form-control" id="first_consultation_treatment" name="first_consultation_treatment" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="first_consultation_notes" class="form-label">Notes de Consultation</label>
+                <textarea class="form-control" id="first_consultation_notes" name="first_consultation_notes" rows="3"></textarea>
+            </div>
+            
             <div class="text-end">
-                <button type="submit" class="btn btn-primary">Save Patient</button>
+                <button type="submit" class="btn btn-primary">Enregistrer Patient et Consultation</button>
             </div>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function validateForm() {
+    const form = document.getElementById('patientForm');
+    const dobInput = document.getElementById('date_of_birth');
+    const today = new Date();
+    const dob = new Date(dobInput.value);
+    
+    // Vérification de la date de naissance
+    if (dob > today) {
+        alert('La date de naissance ne peut pas être dans le futur');
+        return false;
+    }
+
+    // Calcul de l'âge
+    const age = Math.floor((today - dob) / (365.25 * 24 * 60 * 60 * 1000));
+    if (age > 120) {
+        alert('Veuillez vérifier la date de naissance');
+        return false;
+    }
+
+    // Vérification du poids si renseigné
+    const weight = document.getElementById('weight').value;
+    if (weight && (weight < 0 || weight > 500)) {
+        alert('Le poids doit être compris entre 0 et 500 kg');
+        return false;
+    }
+
+    // Vérification de la taille si renseignée
+    const height = document.getElementById('height').value;
+    if (height && (height < 0 || height > 300)) {
+        alert('La taille doit être comprise entre 0 et 300 cm');
+        return false;
+    }
+
+    return true;
+}
+
+// Configuration des contraintes de saisie
+document.addEventListener('DOMContentLoaded', function() {
+    const dobInput = document.getElementById('date_of_birth');
+    const today = new Date().toISOString().split('T')[0];
+    dobInput.setAttribute('max', today);
+
+    // Validation en temps réel du téléphone
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 10) value = value.substr(0, 10);
+        e.target.value = value.replace(/(\d{2})(?=\d)/g, '$1 ');
+    });
+});
+</script>
 {% endblock %}

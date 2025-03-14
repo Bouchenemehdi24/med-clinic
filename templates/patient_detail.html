@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Détails Patient - Medical Clinic{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>{{ patient.first_name }} {{ patient.last_name }}</h2>
+    <a href="{{ url_for('add_consultation', patient_id=patient.id) }}" class="btn btn-primary">Nouvelle Consultation</a>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Informations Patient</h5>
+                <p><strong>Date de naissance:</strong> {{ patient.date_of_birth }}</p>
+                <p><strong>Téléphone:</strong> {{ patient.phone }}</p>
+                <p><strong>Email:</strong> {{ patient.email }}</p>
+                <p><strong>Adresse:</strong> {{ patient.address }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Historique des Consultations</h5>
+                {% for consultation in patient.consultations|sort(attribute='date', reverse=true) %}
+                <div class="consultation-entry border-bottom mb-3 pb-3">
+                    <h6>{{ consultation.date.strftime('%d/%m/%Y %H:%M') }}</h6>
+                    <p><strong>Diagnostic:</strong> {{ consultation.diagnostic }}</p>
+                    {% if consultation.treatment %}
+                    <p><strong>Traitement:</strong> {{ consultation.treatment }}</p>
+                    {% endif %}
+                    {% if consultation.notes %}
+                    <p><strong>Notes:</strong> {{ consultation.notes }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

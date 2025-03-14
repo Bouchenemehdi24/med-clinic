@@ -5,8 +5,16 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Patients</h2>
-    <a href="{{ url_for('add_patient') }}" class="btn btn-primary">Add New Patient</a>
+    <a href="{{ url_for('add_patient') }}" class="btn btn-primary">Nouveau Patient</a>
 </div>
+
+<!-- Ajouter un formulaire de recherche -->
+<form method="GET" action="{{ url_for('patients') }}" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="search" class="form-control" placeholder="Rechercher un patient" value="{{ request.args.get('search', '') }}">
+        <button class="btn btn-outline-secondary" type="submit">Rechercher</button>
+    </div>
+</form>
 
 <div class="card">
     <div class="card-body">
@@ -15,10 +23,12 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Name</th>
-                        <th>Date of Birth</th>
-                        <th>Phone</th>
-                        <th>Email</th>
+                        <th>Nom</th>
+                        <th>Date de naissance</th>
+                        <th>Téléphone</th>
+                        <th>IMC</th>
+                        <th>Diagnostic</th>
+                        <th>Traitement</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -27,11 +37,30 @@
                     <tr>
                         <td>{{ patient.id }}</td>
                         <td>{{ patient.first_name }} {{ patient.last_name }}</td>
-                        <td>{{ patient.date_of_birth.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ patient.date_of_birth.strftime('%d/%m/%Y') }}</td>
                         <td>{{ patient.phone }}</td>
-                        <td>{{ patient.email }}</td>
                         <td>
-                            <a href="{{ url_for('patient_details', patient_id=patient.id) }}" class="btn btn-sm btn-info">View</a>
+                            {% if patient.bmi %}
+                                {{ patient.bmi }}
+                                <span class="badge {% if patient.bmi_category == 'Normal weight' %}bg-success{% elif patient.bmi_category == 'Underweight' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {% if patient.bmi_category == 'Normal weight' %}
+                                        Poids normal
+                                    {% elif patient.bmi_category == 'Underweight' %}
+                                        Sous-poids
+                                    {% elif patient.bmi_category == 'Overweight' %}
+                                        Surpoids
+                                    {% elif patient.bmi_category == 'Obese' %}
+                                        Obésité
+                                    {% endif %}
+                                </span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ patient.first_consultation_diagnostic or '-' }}</td>
+                        <td>{{ patient.first_consultation_treatment or '-' }}</td>
+                        <td>
+                            <a href="{{ url_for('patient_details', patient_id=patient.id) }}" class="btn btn-sm btn-info">Détails</a>
                         </td>
                     </tr>
                     {% endfor %}

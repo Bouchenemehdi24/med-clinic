@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,26 +11,26 @@
     {% if 'user_id' in session %}
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">Medical Clinic</a>
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">Clinique Médicale</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">Tableau de Bord</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('patients') }}">Patients</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('appointments') }}">Appointments</a>
+                        <a class="nav-link" href="{{ url_for('appointments') }}">Rendez-vous</a>
                     </li>
                 </ul>
                 <div class="navbar-text text-white me-3">
-                    Welcome, {{ session.get('user_name', '') }}
+                    Bienvenue, {{ session.get('user_name', '') }}
                 </div>
-                <a href="{{ url_for('logout') }}" class="btn btn-light">Logout</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-light">Déconnexion</a>
             </div>
         </div>
     </nav>

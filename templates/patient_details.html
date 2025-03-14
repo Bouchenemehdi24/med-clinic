@@ -20,6 +20,35 @@
                 <p><strong>Phone:</strong> {{ patient.phone }}</p>
                 <p><strong>Email:</strong> {{ patient.email or 'Not provided' }}</p>
                 <p><strong>Address:</strong> {{ patient.address or 'Not provided' }}</p>
+
+                <!-- Physical Information Section -->
+                <div class="mt-3">
+                    <h5>Physical Information</h5>
+                    <div class="row">
+                        {% if patient.weight %}
+                        <div class="col-md-4">
+                            <p><strong>Weight:</strong> {{ patient.weight }} kg</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if patient.height %}
+                        <div class="col-md-4">
+                            <p><strong>Height:</strong> {{ patient.height }} cm</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if patient.bmi %}
+                        <div class="col-md-4">
+                            <p>
+                                <strong>BMI:</strong> {{ patient.bmi }} 
+                                <span class="badge {% if patient.bmi_category == 'Normal weight' %}bg-success{% elif patient.bmi_category == 'Underweight' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ patient.bmi_category }}
+                                </span>
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -31,6 +60,26 @@
             <div class="card-body">
                 <p>{{ patient.medical_history or 'No medical history recorded.' }}</p>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h4>Première Consultation</h4>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="fw-bold">Diagnostic:</label>
+            <p>{{ patient.first_consultation_diagnostic or 'Non renseigné' }}</p>
+        </div>
+        <div class="mb-3">
+            <label class="fw-bold">Traitement:</label>
+            <p>{{ patient.first_consultation_treatment or 'Non renseigné' }}</p>
+        </div>
+        <div class="mb-3">
+            <label class="fw-bold">Notes:</label>
+            <p>{{ patient.first_consultation_notes or 'Non renseigné' }}</p>
         </div>
     </div>
 </div>

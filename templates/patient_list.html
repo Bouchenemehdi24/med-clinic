@@ -1,0 +1,30 @@
+<!-- ...existing code... -->
+<div class="table-responsive">
+    <!-- ...existing code... -->
+</div>
+
+<!-- Pagination -->
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if patients.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('list_patients', page=patients.prev_num) }}">Précédent</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in patients.iter_pages(left_edge=2, right_edge=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == patients.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('list_patients', page=page_num) }}">{{ page_num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if patients.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('list_patients', page=patients.next_num) }}">Suivant</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+<!-- ...existing code... -->

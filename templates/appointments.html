@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Appointments</h2>
-    <a href="{{ url_for('add_appointment') }}" class="btn btn-primary">Schedule New Appointment</a>
+    <h2>Rendez-vous</h2>
+    <a href="{{ url_for('add_appointment') }}" class="btn btn-primary">Nouveau Rendez-vous</a>
 </div>
 
 <div class="card">
@@ -15,10 +15,10 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>Date & Time</th>
+                        <th>Date & Heure</th>
                         <th>Patient</th>
-                        <th>Reason</th>
-                        <th>Status</th>
+                        <th>Motif</th>
+                        <th>Statut</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -34,11 +34,17 @@
                         <td>{{ appointment.reason }}</td>
                         <td>
                             <span class="badge {% if appointment.status == 'completed' %}bg-success{% elif appointment.status == 'cancelled' %}bg-danger{% else %}bg-primary{% endif %}">
-                                {{ appointment.status }}
+                                {% if appointment.status == 'scheduled' %}
+                                    Planifié
+                                {% elif appointment.status == 'completed' %}
+                                    Terminé
+                                {% elif appointment.status == 'cancelled' %}
+                                    Annulé
+                                {% endif %}
                             </span>
                         </td>
                         <td>
-                            <a href="{{ url_for('update_appointment', appointment_id=appointment.id) }}" class="btn btn-sm btn-warning">Update</a>
+                            <a href="{{ url_for('update_appointment', appointment_id=appointment.id) }}" class="btn btn-sm btn-warning">Modifier</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -46,7 +52,7 @@
             </table>
         </div>
         {% else %}
-        <p>No upcoming appointments scheduled.</p>
+        <p>Aucun rendez-vous à venir.</p>
         {% endif %}
     </div>
 </div>

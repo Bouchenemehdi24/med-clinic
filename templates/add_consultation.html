@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Ajouter Consultation - Medical Clinic{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h3>Nouvelle Consultation pour {{ patient.first_name }} {{ patient.last_name }}</h3>
+        <form method="POST" action="{{ url_for('add_consultation', patient_id=patient.id) }}">
+            <div class="mb-3">
+                <label for="date" class="form-label">Date de Consultation</label>
+                <input type="datetime-local" class="form-control" id="date" name="date" required>
+            </div>
+            <div class="mb-3">
+                <label for="diagnostic" class="form-label">Diagnostic</label>
+                <textarea class="form-control" id="diagnostic" name="diagnostic" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="treatment" class="form-label">Traitement</label>
+                <textarea class="form-control" id="treatment" name="treatment" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Enregistrer la Consultation</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
