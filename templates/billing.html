@@ -4,7 +4,59 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Facturation et Paiements</h2>
+    <h2>Facturation</h2>
+    <div class="btn-group">
+        <button class="btn btn-success" onclick="exportBilling()">
+            <i class="fas fa-file-excel"></i> Export Excel
+        </button>
+        <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#statsModal">
+            <i class="fas fa-chart-pie"></i> Statistiques
+        </button>
+        <button class="btn btn-warning" onclick="printBilling()">
+            <i class="fas fa-print"></i> Imprimer
+        </button>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Statistiques</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Total des patients :</strong> {{ total_patients }}</p>
+                <p><strong>Consultations aujourd'hui :</strong> {{ consultations_today }}</p>
+                <p><strong>Consultations cette semaine :</strong> {{ consultations_this_week }}</p>
+                <p><strong>Consultations sur la période définie :</strong> {{ consultations_in_period }}</p>
+                <p><strong>Revenu total (DA) sur la période définie :</strong> {{ revenue_in_period }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Définir une période</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('billing') }}">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <label for="start_date" class="form-label">Date de début</label>
+                            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date }}">
+                        </div>
+                        <div class="col-md-5">
+                            <label for="end_date" class="form-label">Date de fin</label>
+                            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date }}">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Appliquer</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="card">

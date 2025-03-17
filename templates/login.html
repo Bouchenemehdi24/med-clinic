@@ -21,6 +21,10 @@
                     </div>
                     <button type="submit" class="btn btn-primary">Se connecter</button>
                 </form>
+                <div class="developer-info">
+                    <p>Développé par : {{ developer_info.name }}</p>
+                    <p>Contact : <a href="mailto:{{ developer_info.email }}">{{ developer_info.email }}</a></p>
+                </div>
             </div>
         </div>
     </div>

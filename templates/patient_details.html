@@ -6,20 +6,40 @@
 <!-- En-tête du dossier -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="mb-0">{{ patient.first_name }} {{ patient.last_name }}</h2>
+        <h2>{{ patient.first_name }} {{ patient.last_name }}</h2>
         <p class="text-muted mb-0">Dossier #{{ patient.id }}</p>
     </div>
     <div class="btn-group">
         <a href="{{ url_for('edit_patient', patient_id=patient.id) }}" class="btn btn-warning">
             <i class="fas fa-edit"></i> Modifier
         </a>
-        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#sickLeaveModal">
-            <i class="fas fa-file-medical"></i> Arrêt de Travail
+        <button class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fas fa-file-medical"></i> Documents
         </button>
-        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#chronicDiseaseModal">
-            <i class="fas fa-heartbeat"></i> Certificat Maladie Chronique
-        </button>
-        <a href="{{ url_for('add_appointment') }}?patient_id={{ patient.id }}" class="btn btn-primary">
+        <ul class="dropdown-menu">
+            <li>
+                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#sickLeaveModal">
+                    <i class="fas fa-file-medical-alt"></i> Arrêt de travail
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#prescriptionModal">
+                    <i class="fas fa-prescription"></i> Ordonnance
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#chronicDiseaseModal">
+                    <i class="fas fa-heartbeat"></i> Certificat maladie chronique
+                </button>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <button class="dropdown-item" onclick="exportMedicalHistory()">
+                    <i class="fas fa-file-export"></i> Exporter dossier
+                </button>
+            </li>
+        </ul>
+        <a href="{{ url_for('add_appointment', patient_id=patient.id, prefill=true) }}" class="btn btn-primary">
             <i class="fas fa-calendar-plus"></i> Nouveau RDV
         </a>
     </div>
@@ -261,7 +281,7 @@
                 <h5 class="modal-title">Générer un Arrêt de Travail</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ url_for('generate_sick_leave', patient_id=patient.id) }}" method="post">
+            <form id="sickLeaveForm" onsubmit="previewDocument(event, 'sick-leave')">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Date de début</label>
@@ -278,6 +298,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-info" onclick="previewDocument(event, 'sick-leave')">Prévisualiser</button>
                     <button type="submit" class="btn btn-primary">Générer</button>
                 </div>
             </form>
@@ -293,7 +314,7 @@
                 <h5 class="modal-title">Certificat de Maladie Chronique</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ url_for('generate_chronic_disease', patient_id=patient.id) }}" method="post">
+            <form id="chronicDiseaseForm" onsubmit="previewDocument(event, 'chronic-disease')">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Maladie Chronique</label>
@@ -311,9 +332,30 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-info" onclick="previewDocument(event, 'chronic-disease')">Prévisualiser</button>
                     <button type="submit" class="btn btn-primary">Générer</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Prévisualisation -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Prévisualisation du Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent" class="border p-4" style="min-height: 500px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" onclick="generateDocument()">Générer</button>
+            </div>
         </div>
     </div>
 </div>
@@ -338,6 +380,7 @@
     width: 15px;
     height: 15px;
     border-radius: 50%;
+    background-color: #dee2e6;
 }
 
 .consultation-card {
@@ -377,6 +420,35 @@
 <script>
 function printHistory() {
     window.print();
+}
+
+let currentForm = null;
+let currentType = null;
+
+function previewDocument(event, type) {
+    event.preventDefault();
+    currentForm = event.target.closest('form');
+    currentType = type;
+
+    const formData = new FormData(currentForm);
+    fetch(`/preview/${type}/{{ patient.id }}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('previewContent').innerHTML = html;
+        const docModal = bootstrap.Modal.getInstance(document.getElementById(type === 'sick-leave' ? 'sickLeaveModal' : 'chronicDiseaseModal'));
+        docModal.hide();
+        const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+        previewModal.show();
+    });
+}
+
+function generateDocument() {
+    if (currentForm && currentType) {
+        currentForm.submit();
+    }
 }
 </script>
 {% endblock %}

@@ -92,122 +92,174 @@
                             <h5 class="mb-0">Première Consultation</h5>
                         </div>
                         <div class="card-body">
+                            <!-- Symptômes -->
                             <div class="mb-3">
-                                <label for="diagnostic" class="form-label">Diagnostic</label>
-                                <textarea class="form-control" id="diagnostic" name="diagnostic" rows="3"
-                                        placeholder="Entrez le diagnostic initial..."></textarea>
+                                <label class="form-label h5"><i class="fas fa-heartbeat"></i> Symptômes</label>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" 
+                                           class="form-control form-control-lg"
+                                           id="symptoms-search" 
+                                           placeholder="Rechercher des symptômes..."
+                                           autocomplete="off">
+                                </div>
+                                <div class="symptoms-container border rounded p-3 bg-light" style="max-height: 400px; overflow-y: auto;">
+                                    <div class="accordion custom-accordion" id="symptomsAccordion">
+                                        {% for category, symptoms in symptomes.items() %}
+                                        <div class="accordion-item symptom-category border-0 mb-2">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed bg-primary bg-opacity-10" type="button" 
+                                                        data-bs-toggle="collapse" 
+                                                        data-bs-target="#category{{ loop.index }}">
+                                                    <i class="fas fa-folder me-2"></i> {{ category }}
+                                                    <span class="badge bg-primary ms-2 category-count">0</span>
+                                                </button>
+                                            </h2>
+                                            <div id="category{{ loop.index }}" class="accordion-collapse collapse">
+                                                <div class="accordion-body bg-white rounded-bottom shadow-sm">
+                                                    <div class="row symptoms-list">
+                                                        {% for symptom in symptoms %}
+                                                        <div class="col-md-6 mb-2 symptom-item">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" 
+                                                                       name="symptoms" 
+                                                                       value="{{ symptom }}" 
+                                                                       id="symptom_{{ category }}_{{ loop.index }}">
+                                                                <label class="form-check-label" 
+                                                                       for="symptom_{{ category }}_{{ loop.index }}">
+                                                                    {{ symptom }}
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="mt-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-plus-circle"></i> Autres symptômes non listés
+                                        </label>
+                                        <textarea class="form-control" name="other_symptoms" rows="2"
+                                                  placeholder="Ajoutez d'autres symptômes non présents dans la liste..."></textarea>
+                                    </div>
+                                </div>
                             </div>
+
+                            <!-- Diagnostic -->
                             <div class="mb-3">
-                                <label for="treatment" class="form-label">Traitement</label>
-                                <textarea class="form-control" id="treatment" name="treatment" rows="3"
-                                        placeholder="Prescrivez le traitement..."></textarea>
+                                <label class="form-label h5"><i class="fas fa-stethoscope"></i> Diagnostic</label>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" 
+                                           class="form-control form-control-lg"
+                                           id="diagnostic-search" 
+                                           placeholder="Rechercher un diagnostic..."
+                                           autocomplete="off">
+                                </div>
+                                <div class="diagnostic-container border rounded p-3 bg-light" style="max-height: 300px; overflow-y: auto;">
+                                    <div class="accordion custom-accordion" id="diagnosticAccordion">
+                                        {% for category, diagnoses in diagnostics.items() %}
+                                        <div class="accordion-item diagnostic-category border-0 mb-2">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed bg-info bg-opacity-10" type="button" 
+                                                        data-bs-toggle="collapse" 
+                                                        data-bs-target="#diagnostic{{ loop.index }}">
+                                                    <i class="fas fa-folder-open me-2"></i> {{ category }}
+                                                    <span class="badge bg-info ms-2 category-count">0</span>
+                                                </button>
+                                            </h2>
+                                            <div id="diagnostic{{ loop.index }}" class="accordion-collapse collapse">
+                                                <div class="accordion-body bg-white rounded-bottom shadow-sm">
+                                                    <div class="row">
+                                                        {% for diagnosis in diagnoses %}
+                                                        <div class="col-md-6 mb-2 diagnostic-item">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" 
+                                                                       name="diagnostics" 
+                                                                       value="{{ diagnosis }}"
+                                                                       id="diagnostic_{{ category }}_{{ loop.index }}">
+                                                                <label class="form-check-label" 
+                                                                       for="diagnostic_{{ category }}_{{ loop.index }}">
+                                                                    {{ diagnosis }}
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="mt-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-plus-circle"></i> Autre diagnostic
+                                        </label>
+                                        <textarea class="form-control" name="other_diagnostic" rows="2"
+                                                  placeholder="Ajoutez un diagnostic non présent dans la liste..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Traitement -->
+                            <div class="mb-3">
+                                <label class="form-label">Traitement</label>
+                                <textarea class="form-control" name="treatment" rows="3"
+                                        placeholder="Traitement prescrit..."></textarea>
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="mb-3">
+                                <label class="form-label">Notes additionnelles</label>
+                                <textarea class="form-control" name="notes" rows="2"
+                                        placeholder="Notes supplémentaires..."></textarea>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Services et Facturation -->
                 <div class="col-md-6">
                     <div class="card mb-4">
                         <div class="card-header bg-success text-white">
-                            <h5 class="mb-0">Services à Facturer</h5>
+                            <h5 class="mb-0">Services et Paiement</h5>
                         </div>
                         <div class="card-body">
                             {% for service in services %}
-                            <div class="form-check mb-2 d-flex justify-content-between align-items-center">
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
                                 <div>
-                                    <input class="form-check-input service-checkbox" type="checkbox" 
+                                    <input type="checkbox" class="form-check-input service-checkbox" 
                                            name="initial_services" value="{{ service.id }}"
-                                           id="service_{{ service.id }}"
                                            data-price="{{ service.price }}">
-                                    <label class="form-check-label" for="service_{{ service.id }}">
-                                        {{ service.name }}
-                                    </label>
+                                    <label class="form-check-label">{{ service.name }}</label>
                                 </div>
-                                <span class="badge bg-secondary">{{ service.price }} DA</span>
+                                <span class="text-muted">{{ service.price }} DA</span>
                             </div>
                             {% endfor %}
                             <hr>
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="mb-0">Total:</h6>
-                                <h5 class="mb-0" id="total-amount">0 DA</h5>
+                                <h5 class="mb-0" id="services-total">0 DA</h5>
                             </div>
+                            <!-- Suppression de la checkbox "Marquer comme payé" -->
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Consultation initiale -->
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Consultation Initiale</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label">Symptômes</label>
-                            <textarea class="form-control" name="symptoms" rows="3"
-                                    placeholder="Description des symptômes..."></textarea>
+                    <!-- Prochain RDV -->
+                    <div class="card">
+                        <div class="card-header bg-warning">
+                            <h5 class="mb-0">Prochain Rendez-vous</h5>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Diagnostic</label>
-                            <textarea class="form-control" name="diagnostic" rows="3"
-                                    placeholder="Diagnostic initial..."></textarea>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Traitement</label>
-                            <textarea class="form-control" name="treatment" rows="3"
-                                    placeholder="Traitement prescrit..."></textarea>
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Notes additionnelles</label>
-                            <textarea class="form-control" name="notes" rows="2"
-                                    placeholder="Notes supplémentaires..."></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Services -->
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Services et Paiement</h5>
-                </div>
-                <div class="card-body">
-                    {% for service in services %}
-                    <div class="form-check d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                            <input type="checkbox" class="form-check-input" 
-                                   name="initial_services" value="{{ service.id }}"
-                                   data-price="{{ service.price }}">
-                            <label class="form-check-label">{{ service.name }}</label>
-                        </div>
-                        <span class="text-muted">{{ service.price }} DA</span>
-                    </div>
-                    {% endfor %}
-                    <hr>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="mb-0">Total:</h6>
-                        <h5 class="mb-0" id="services-total">0 DA</h5>
-                    </div>
-                    <div class="form-check mb-3">
-                        <input type="checkbox" class="form-check-input" name="paid" id="paid">
-                        <label class="form-check-label" for="paid">Marquer comme payé</label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Prochain RDV -->
-            <div class="card mb-4">
-                <div class="card-header bg-warning">
-                    <h5 class="mb-0">Prochain Rendez-vous</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label for="next_appointment_date" class="form-label">Date du prochain rendez-vous</label>
-                            <input type="date" class="form-control" id="next_appointment_date" 
-                                   name="next_appointment_date" min="{{ today }}">
-                            <small class="text-muted">Optionnel</small>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="next_appointment_date" class="form-label">Date du prochain rendez-vous</label>
+                                <input type="date" class="form-control" id="next_appointment_date" 
+                                       name="next_appointment_date" min="{{ today }}">
+                                <small class="text-muted">Optionnel</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -299,7 +351,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Formatage automatique du numéro de téléphone
-    const phoneInput = document.getElementById('phone');
     phoneInput.addEventListener('input', function(e) {
         let value = e.target.value.replace(/\D/g, '');
         if (value.length > 10) value = value.substr(0, 10);
@@ -314,5 +365,161 @@ document.addEventListener('DOMContentLoaded', function() {
         e.target.value = formatted;
     });
 });
+
+document.querySelectorAll('input[name="symptoms"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        updateSelectedSymptoms();
+    });
+});
+
+function updateSelectedSymptoms() {
+    const selectedSymptoms = Array.from(document.querySelectorAll('input[name="symptoms"]:checked'))
+        .map(cb => cb.value)
+        .join(', ');
+    
+    const otherSymptoms = document.querySelector('textarea[name="other_symptoms"]').value;
+    
+    // Combine selected symptoms with other symptoms
+    const allSymptoms = [selectedSymptoms, otherSymptoms].filter(Boolean).join('\n');
+    
+    // Update hidden input for form submission
+    document.querySelector('input[name="symptoms"]').value = allSymptoms;
+}
+
+document.getElementById('symptoms-search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const items = document.getElementsByClassName('symptom-item');
+    const categories = document.getElementsByClassName('symptom-category');
+    let hasVisibleSymptoms = {};
+
+    // Search through all symptoms
+    Array.from(items).forEach(item => {
+        const label = item.querySelector('label').textContent.toLowerCase();
+        const category = item.closest('.accordion-item');
+        const isVisible = label.includes(searchTerm);
+        item.style.display = isVisible ? '' : 'none';
+        
+        // Track if category has visible symptoms
+        if (isVisible) {
+            hasVisibleSymptoms[category.id] = true;
+        }
+    });
+
+    // Show/hide categories based on search results
+    Array.from(categories).forEach(category => {
+        category.style.display = hasVisibleSymptoms[category.id] ? '' : 'none';
+        if (hasVisibleSymptoms[category.id] && searchTerm) {
+            // Auto-expand categories with matches
+            category.querySelector('.accordion-collapse').classList.add('show');
+        }
+    });
+});
+
+document.getElementById('diagnostic-search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const items = document.getElementsByClassName('diagnostic-item');
+    const categories = document.getElementsByClassName('diagnostic-category');
+    let hasVisibleDiagnostics = {};
+
+    // Search through all diagnostics
+    Array.from(items).forEach(item => {
+        const label = item.querySelector('label').textContent.toLowerCase();
+        const category = item.closest('.accordion-item');
+        const isVisible = label.includes(searchTerm);
+        item.style.display = isVisible ? '' : 'none';
+        
+        if (isVisible) {
+            hasVisibleDiagnostics[category.id] = true;
+        }
+    });
+
+    // Show/hide categories based on search results
+    Array.from(categories).forEach(category => {
+        category.style.display = hasVisibleDiagnostics[category.id] ? '' : 'none';
+        if (hasVisibleDiagnostics[category.id] && searchTerm) {
+            category.querySelector('.accordion-collapse').classList.add('show');
+        }
+    });
+});
+
+document.querySelectorAll('input[name="diagnostics"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        updateSelectedDiagnostics();
+    });
+});
+
+function updateSelectedDiagnostics() {
+    const selectedDiagnostics = Array.from(document.querySelectorAll('input[name="diagnostics"]:checked'))
+        .map(cb => cb.value)
+        .join(', ');
+    
+    const otherDiagnostic = document.querySelector('textarea[name="other_diagnostic"]').value;
+    
+    const allDiagnostics = [selectedDiagnostics, otherDiagnostic].filter(Boolean).join('\n');
+    document.querySelector('textarea[name="diagnostic"]').value = allDiagnostics;
+}
+
+// ...rest of existing script...
+
+function updateCategoryCounts() {
+    document.querySelectorAll('.accordion-item').forEach(category => {
+        const checkedCount = category.querySelectorAll('input[type="checkbox"]:checked').length;
+        const countBadge = category.querySelector('.category-count');
+        if (countBadge) {
+            countBadge.textContent = checkedCount;
+            countBadge.style.display = checkedCount > 0 ? '' : 'none';
+        }
+        
+        // Mise en évidence visuelle des catégories avec éléments sélectionnés
+        const button = category.querySelector('.accordion-button');
+        if (checkedCount > 0) {
+            button.classList.add('border-primary');
+        } else {
+            button.classList.remove('border-primary');
+        }
+    });
+}
+
+// Ajouter l'appel à updateCategoryCounts dans les gestionnaires d'événements existants
+document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+        updateCategoryCounts();
+    });
+});
+
+// ...rest of existing script code...
 </script>
 {% endblock %}
+
+<!-- Ajout du style personnalisé -->
+<style>
+.custom-accordion .accordion-button {
+    border-radius: 6px;
+    margin-bottom: 2px;
+}
+
+.custom-accordion .accordion-button:not(.collapsed) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.custom-accordion .accordion-body {
+    padding: 1rem;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.symptom-item:hover, .diagnostic-item:hover {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.form-check-input:checked + .form-check-label {
+    font-weight: bold;
+    color: #0d6efd;
+}
+
+.category-count {
+    min-width: 24px;
+}
+</style>

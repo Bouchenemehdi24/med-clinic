@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier Service{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h4 class="mb-0">Modifier Service</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('edit_service', service_id=service.id) }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nom du service</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ service.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Prix (DA)</label>
+                        <input type="number" class="form-control" id="price" name="price" value="{{ service.price }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-warning">Enregistrer</button>
+                    <a href="{{ url_for('manage_services') }}" class="btn btn-secondary">Annuler</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

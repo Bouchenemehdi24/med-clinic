@@ -11,121 +11,49 @@
         </div>
     </div>
     <div class="card-body">
-        <!-- Filtres pour la recherche de patients -->
-        <div id="patient-filters" class="mb-4">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <input type="text" id="search-patient" class="form-control" 
-                               placeholder="Rechercher un patient...">
-                        <button class="btn btn-outline-secondary" type="button" id="clear-search">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <select id="filter-by" class="form-select">
-                        <option value="all">Tous les patients</option>
-                        <option value="recent">Patients récents</option>
-                        <option value="pending">En attente de RDV</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
         <form method="post" id="appointmentForm" class="needs-validation" novalidate>
-            <!-- Type de patient -->
-            <div class="mb-4">
-                <label class="form-label h5">Type de patient</label>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card h-100 cursor-pointer patient-type-card" data-type="existing">
-                            <div class="card-body text-center">
-                                <i class="fas fa-user-check fa-3x mb-2 text-primary"></i>
-                                <h5>Patient Existant</h5>
-                                <p class="text-muted mb-0">Sélectionner un patient de la base de données</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card h-100 cursor-pointer patient-type-card" data-type="new">
-                            <div class="card-body text-center">
-                                <i class="fas fa-user-plus fa-3x mb-2 text-success"></i>
-                                <h5>Nouveau Patient</h5>
-                                <p class="text-muted mb-0">Créer un nouveau dossier patient</p>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Informations du patient temporaire -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">Prénom*</label>
+                    <input type="text" class="form-control" name="first_name" required>
                 </div>
-                <input type="hidden" name="patient_type" id="patient_type" value="existing">
-            </div>
-
-            <!-- Sélection du patient existant -->
-            <div id="existing_patient_form" class="mb-4">
-                <label for="patient_id" class="form-label h5">Sélectionner un patient</label>
-                <select class="form-select form-select-lg" id="patient_id" name="patient_id" required>
-                    <option value="">-- Choisir un patient --</option>
-                    {% for patient in patients %}
-                    <option value="{{ patient.id }}" data-phone="{{ patient.phone }}" 
-                            data-dob="{{ patient.date_of_birth.strftime('%d/%m/%Y') }}">
-                        {{ patient.first_name }} {{ patient.last_name }}
-                    </option>
-                    {% endfor %}
-                </select>
-                <div id="patient_info" class="mt-2 d-none">
-                    <div class="alert alert-info">
-                        <p class="mb-1"><strong>Téléphone:</strong> <span id="patient_phone"></span></p>
-                        <p class="mb-0"><strong>Date de naissance:</strong> <span id="patient_dob"></span></p>
-                    </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nom*</label>
+                    <input type="text" class="form-control" name="last_name" required>
                 </div>
             </div>
 
-            <!-- Nouveau patient -->
-            <div id="new_patient_form" class="mb-4 d-none">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Prénom*</label>
-                        <input type="text" class="form-control form-control-lg" name="first_name">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">Date de naissance*</label>
+                    <input type="date" class="form-control" name="date_of_birth" 
+                           max="{{ today }}" required>
+                    <div class="invalid-feedback">
+                        La date de naissance ne peut pas être dans le futur
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Nom*</label>
-                        <input type="text" class="form-control form-control-lg" name="last_name">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Date de naissance*</label>
-                        <input type="date" class="form-control form-control-lg" name="date_of_birth" 
-                               max="{{ today }}" min="{{ min_birth_date.strftime('%Y-%m-%d') }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Téléphone</label>
-                        <input type="tel" class="form-control form-control-lg" name="phone">
-                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Téléphone</label>
+                    <input type="tel" class="form-control" name="phone" 
+                           pattern="[0-9\s]{10,}" 
+                           title="Entrez un numéro de téléphone valide">
                 </div>
             </div>
 
-            <!-- Date -->
-            <div class="mb-4">
-                <label class="form-label h5">Date du rendez-vous*</label>
-                <input type="date" class="form-control form-control-lg" name="date" 
-                       min="{{ today }}" required>
-            </div>
-
-            <!-- Motif et Notes -->
+            <!-- Date du rendez-vous -->
             <div class="row">
                 <div class="col-md-6 mb-4">
-                    <label class="form-label h5">Motif de consultation*</label>
-                    <select class="form-select form-select-lg" name="reason" required>
-                        <option value="">Choisir un motif</option>
-                        {% for reason in reasons %}
-                        <option value="{{ reason }}">{{ reason }}</option>
-                        {% endfor %}
-                    </select>
+                    <label class="form-label h5">Date du rendez-vous*</label>
+                    <input type="date" class="form-control form-control-lg" name="date" 
+                           min="{{ today }}" required>
+                    <input type="hidden" name="reason" value="Consultation de suivi">
                 </div>
-                <div class="col-md-6 mb-4">
-                    <label class="form-label h5">Notes</label>
-                    <textarea class="form-control" name="notes" rows="3" 
-                              placeholder="Notes additionnelles sur le rendez-vous..."></textarea>
-                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                Le dossier patient complet sera créé lors de la consultation.
             </div>
 
             <div class="text-end">
@@ -158,46 +86,30 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const patientTypeCards = document.querySelectorAll('.patient-type-card');
-    const patientTypeInput = document.getElementById('patient_type');
-    const existingPatientForm = document.getElementById('existing_patient_form');
-    const newPatientForm = document.getElementById('new_patient_form');
-    const patientSelect = document.getElementById('patient_id');
-    const patientInfo = document.getElementById('patient_info');
-    const patientPhone = document.getElementById('patient_phone');
-    const patientDOB = document.getElementById('patient_dob');
-
-    // Gestion du type de patient
-    patientTypeCards.forEach(card => {
-        card.addEventListener('click', function() {
-            patientTypeCards.forEach(c => c.classList.remove('selected'));
-            this.classList.add('selected');
-            const type = this.dataset.type;
-            patientTypeInput.value = type;
-            
-            if (type === 'existing') {
-                existingPatientForm.classList.remove('d-none');
-                newPatientForm.classList.add('d-none');
-                patientSelect.required = true;
-            } else {
-                existingPatientForm.classList.add('d-none');
-                newPatientForm.classList.remove('d-none');
-                patientSelect.required = false;
-            }
-        });
-    });
-
-    // Affichage des informations du patient sélectionné
-    patientSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        if (this.value) {
-            patientPhone.textContent = selectedOption.dataset.phone || 'Non renseigné';
-            patientDOB.textContent = selectedOption.dataset.dob;
-            patientInfo.classList.remove('d-none');
-        } else {
-            patientInfo.classList.add('d-none');
+    // Set max date for date of birth to today
+    const dobInput = document.querySelector('input[name="date_of_birth"]');
+    dobInput.max = new Date().toISOString().split('T')[0];
+    
+    dobInput.addEventListener('change', function(e) {
+        const selectedDate = new Date(this.value);
+        const today = new Date();
+        
+        if (selectedDate > today) {
+            this.value = today.toISOString().split('T')[0];
+            alert('La date de naissance ne peut pas être dans le futur');
         }
     });
+
+    // Format du numéro de téléphone
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 10) value = value.substr(0, 10);
+            value = value.replace(/(\d{2})(?=\d)/g, '$1 ');
+            e.target.value = value;
+        });
+    }
 
     // Validation du formulaire
     const form = document.getElementById('appointmentForm');
@@ -208,64 +120,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         form.classList.add('was-validated');
     });
-
-    // Sélectionner la première carte par défaut
-    patientTypeCards[0].click();
-
-    // Recherche en temps réel
-    const searchInput = document.getElementById('search-patient');
-    const clearSearch = document.getElementById('clear-search');
-    const originalOptions = [...patientSelect.options];
-
-    searchInput.addEventListener('input', function() {
-        const searchText = this.value.toLowerCase();
-        const filterBy = document.getElementById('filter-by').value;
-        filterPatients(searchText, filterBy);
-    });
-
-    document.getElementById('filter-by').addEventListener('change', function() {
-        const searchText = searchInput.value.toLowerCase();
-        filterPatients(searchText, this.value);
-    });
-
-    clearSearch.addEventListener('click', function() {
-        searchInput.value = '';
-        document.getElementById('filter-by').value = 'all';
-        resetPatientList();
-    });
-
-    function filterPatients(searchText, filterType) {
-        // Réinitialiser la liste
-        patientSelect.innerHTML = '<option value="">-- Choisir un patient --</option>';
-        
-        originalOptions.forEach(option => {
-            if (option.value === '') return; // Ignorer l'option par défaut
-
-            const matchesSearch = option.text.toLowerCase().includes(searchText);
-            let matchesFilter = true;
-
-            // Appliquer les filtres supplémentaires
-            if (filterType === 'recent') {
-                // Exemple : vérifier si le patient a eu un RDV dans les 30 derniers jours
-                // Cette logique devrait être adaptée selon vos besoins
-                matchesFilter = true; // À implémenter selon votre logique
-            } else if (filterType === 'pending') {
-                // Exemple : vérifier si le patient a des RDV en attente
-                matchesFilter = true; // À implémenter selon votre logique
-            }
-
-            if (matchesSearch && matchesFilter) {
-                patientSelect.appendChild(option.cloneNode(true));
-            }
-        });
-    }
-
-    function resetPatientList() {
-        patientSelect.innerHTML = '';
-        originalOptions.forEach(option => {
-            patientSelect.appendChild(option.cloneNode(true));
-        });
-    }
 });
 </script>
 {% endblock %}

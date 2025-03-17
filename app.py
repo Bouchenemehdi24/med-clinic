@@ -1,15 +1,17 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response, Response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from datetime import datetime, timedelta
-from routes.services import services_bp
 from functools import wraps
 import pdfkit
 from docx import Document
 from docx.shared import Pt, Cm
 from io import BytesIO
+import io
+import csv
+from routes.services import services_bp  # Make sure this line is present
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
@@ -54,6 +56,7 @@ class Patient(db.Model):
     treatment = db.Column(db.Text)
     next_appointment_date = db.Column(db.DateTime, nullable=True)
     appointments = db.relationship('Appointment', backref='patient', lazy=True)
+    symptoms = db.Column(db.Text)  # Add this line
     
     @property
     def bmi(self):
@@ -164,6 +167,301 @@ APPOINTMENT_REASONS = [
     'Autre symptôme respiratoire'
 ]
 
+SYMPTOMES = {
+    'Respiratoire': [
+        'Toux sèche',
+        'Toux grasse productive',
+        'Toux nocturne',
+        'Toux chronique (>3 semaines)',
+        'Expectorations claires',
+        'Expectorations verdâtres',
+        'Expectorations jaunâtres',
+        'Expectorations sanglantes',
+        'Dyspnée légère',
+        'Dyspnée modérée',
+        'Dyspnée sévère',
+        'Dyspnée au repos',
+        'Dyspnée à l\'effort',
+        'Dyspnée nocturne',
+        'Dyspnée paroxystique',
+        'Sifflements expiratoires',
+        'Sifflements inspiratoires',
+        'Wheezing',
+        'Stridor',
+        'Douleur thoracique respiratoire',
+        'Douleur pleurale',
+        'Oppression thoracique',
+        'Respiration sifflante',
+        'Respiration rapide (tachypnée)',
+        'Respiration lente (bradypnée)',
+        'Tirage intercostal',
+        'Cyanose des lèvres',
+        'Cyanose des extrémités',
+        'Orthopnée',
+        'Rhinorrhée',
+        'Congestion nasale',
+        'Éternuements fréquents',
+        'Épistaxis',
+        'Voix rauque',
+        'Hémoptysie minime',
+        'Hémoptysie massive'
+    ],
+    'Cardiovasculaire': [
+        'Palpitations',
+        'Douleur thoracique à l\'effort',
+        'Douleur thoracique au repos',
+        'Œdème des membres inférieurs',
+        'Tachycardie (>100 bpm)',
+        'Bradycardie (<60 bpm)',
+        'Hypertension artérielle',
+        'Hypotension artérielle',
+        'Cyanose',
+        'Syncope'
+    ],
+    'Digestif': [
+        'Nausées légères',
+        'Nausées sévères',
+        'Vomissements alimentaires',
+        'Vomissements bilieux',
+        'Diarrhée aqueuse',
+        'Diarrhée glairo-sanglante',
+        'Constipation',
+        'Douleur abdominale diffuse',
+        'Douleur abdominale localisée',
+        'Ballonnements'
+    ],
+    'Neurologique': [
+        'Céphalées légères',
+        'Céphalées intenses',
+        'Migraine',
+        'Vertiges',
+        'Troubles de l\'équilibre',
+        'Tremblements',
+        'Convulsions',
+        'Troubles de la conscience',
+        'Troubles de la mémoire',
+        'Troubles du langage'
+    ],
+    'Musculo-squelettique': [
+        'Douleurs articulaires diffuses',
+        'Douleurs articulaires localisées',
+        'Raideur matinale',
+        'Faiblesse musculaire',
+        'Crampes musculaires',
+        'Lombalgies',
+        'Cervicalgies',
+        'Sciatalgie',
+        'Gonflement articulaire',
+        'Limitation des mouvements'
+    ],
+    'Cutané': [
+        'Éruption cutanée localisée',
+        'Éruption cutanée généralisée',
+        'Prurit',
+        'Urticaire',
+        'Eczéma',
+        'Pétéchies',
+        'Ecchymoses',
+        'Œdème localisé',
+        'Lésions ulcérées',
+        'Modifications des ongles'
+    ],
+    'Général': [
+        'Fièvre légère (37.5-38.5°C)',
+        'Fièvre modérée (38.5-39.5°C)',
+        'Fièvre intense (>39.5°C)',
+        'Fatigue légère',
+        'Fatigue intense',
+        'Perte d\'appétit',
+        'Perte de poids involontaire',
+        'Sueurs nocturnes',
+        'Malaise général',
+        'Troubles du sommeil'
+    ],
+    'Psychologique': [
+        'Anxiété légère',
+        'Anxiété sévère',
+        'Dépression',
+        'Troubles du sommeil',
+        'Irritabilité',
+        'Troubles de la concentration',
+        'Agitation',
+        'Apathie',
+        'Idées noires',
+        'Attaques de panique'
+    ]
+}
+
+DIAGNOSTICS = {
+    'Respiratoire': [
+        # Maladies obstructives
+        'Asthme bronchique léger',
+        'Asthme bronchique modéré',
+        'Asthme bronchique sévère',
+        'Asthme avec hyperréactivité bronchique',
+        'BPCO légère',
+        'BPCO modérée',
+        'BPCO sévère',
+        'Emphysème pulmonaire',
+        'Bronchectasies',
+        
+        # Infections respiratoires
+        'Bronchite aiguë',
+        'Bronchite chronique simple',
+        'Bronchite chronique mucopurulente',
+        'Pneumonie communautaire',
+        'Pneumonie atypique',
+        'Pneumonie nosocomiale',
+        'Bronchopneumonie',
+        'Pleurésie infectieuse',
+        'Abcès pulmonaire',
+        'Tuberculose pulmonaire active',
+        'Tuberculose pulmonaire latente',
+        
+        # Maladies restrictives
+        'Fibrose pulmonaire idiopathique',
+        'Pneumopathie interstitielle diffuse',
+        'Sarcoïdose pulmonaire',
+        'Pneumoconiose',
+        'Asbestose',
+        'Silicose',
+        
+        # Pathologies pleurales
+        'Pneumothorax spontané',
+        'Pneumothorax traumatique',
+        'Pleurésie sérofibrineuse',
+        'Épanchement pleural',
+        'Hémothorax',
+        'Chylothorax',
+        
+        # Pathologies vasculaires
+        'Embolie pulmonaire aiguë',
+        'Hypertension artérielle pulmonaire',
+        'Cœur pulmonaire chronique',
+        'Syndrome de détresse respiratoire aiguë (SDRA)',
+        
+        # Tumeurs
+        'Cancer bronchique primitif',
+        'Carcinome bronchique à petites cellules',
+        'Carcinome bronchique non à petites cellules',
+        'Métastases pulmonaires',
+        'Tumeur carcinoïde bronchique',
+        
+        # Maladies des voies aériennes supérieures
+        'Rhinite allergique persistante',
+        'Rhinite allergique intermittente',
+        'Sinusite maxillaire aiguë',
+        'Sinusite chronique',
+        'Polypose nasosinusienne',
+        'Laryngite aiguë',
+        'Laryngite chronique',
+        'Dysfonction des cordes vocales',
+        
+        # Troubles respiratoires du sommeil
+        'Syndrome d\'apnées du sommeil',
+        'Syndrome d\'apnées-hypopnées obstructives',
+        'Syndrome d\'apnées centrales',
+        'Syndrome obesity-hypoventilation',
+        
+        # Maladies professionnelles
+        'Asthme professionnel',
+        'Bronchite chronique professionnelle',
+        'Bérylliose',
+        'Pneumopathie d\'hypersensibilité',
+        
+        # Autres pathologies
+        'Mucoviscidose',
+        'Dyskinésie ciliaire primitive',
+        'Déficit en alpha-1 antitrypsine',
+        'Protéinose alvéolaire',
+        'Lymphangioléiomyomatose'
+    ],
+    'Cardiologie': [
+        'Hypertension artérielle',
+        'Insuffisance cardiaque',
+        'Cardiopathie ischémique',
+        'Angine de poitrine',
+        'Infarctus du myocarde',
+        'Trouble du rythme cardiaque',
+        'Fibrillation auriculaire',
+        'Péricardite',
+        'Endocardite',
+        'Thrombose veineuse profonde'
+    ],
+    'Gastroentérologie': [
+        'Gastrite aiguë',
+        'Gastrite chronique',
+        'Ulcère gastrique',
+        'Reflux gastro-œsophagien',
+        'Colopathie fonctionnelle',
+        'Maladie de Crohn',
+        'Rectocolite hémorragique',
+        'Hépatite virale',
+        'Cirrhose hépatique',
+        'Pancréatite aiguë'
+    ],
+    'Endocrinologie': [
+        'Diabète type 1',
+        'Diabète type 2',
+        'Hypothyroïdie',
+        'Hyperthyroïdie',
+        'Maladie de Basedow',
+        'Thyroïdite',
+        'Obésité',
+        'Syndrome métabolique',
+        'Insuffisance surrénalienne',
+        'Hypercorticisme'
+    ],
+    'Neurologie': [
+        'Migraine',
+        'Épilepsie',
+        'Accident vasculaire cérébral',
+        'Sclérose en plaques',
+        'Maladie de Parkinson',
+        'Syndrome anxio-dépressif',
+        'Névralgie',
+        'Compression nerveuse',
+        'Méningite',
+        'Encéphalite'
+    ],
+    'Rhumatologie': [
+        'Arthrose',
+        'Polyarthrite rhumatoïde',
+        'Spondylarthrite ankylosante',
+        'Goutte',
+        'Ostéoporose',
+        'Fibromyalgie',
+        'Lombalgie chronique',
+        'Cervicalgie chronique',
+        'Tendinite',
+        'Syndrome du canal carpien'
+    ],
+    'Dermatologie': [
+        'Eczéma',
+        'Psoriasis',
+        'Urticaire',
+        'Dermite séborrhéique',
+        'Acné',
+        'Zona',
+        'Herpès',
+        'Mycose cutanée',
+        'Gale',
+        'Dermatite de contact'
+    ],
+    'Infectiologie': [
+        'Infection bactérienne',
+        'Infection virale',
+        'Infection parasitaire',
+        'Infection fongique',
+        'Septicémie',
+        'Grippe',
+        'COVID-19',
+        'Mononucléose infectieuse',
+        'Paludisme',
+        'Infection urinaire'
+    ]
+}
+
 def require_doctor(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -181,7 +479,11 @@ def require_doctor(f):
 def index():
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
-    return render_template('login.html')
+    developer_info = {
+        'name': 'Dr. Bouchene Mohammed Mehdi',
+        'email': 'bouchenemehdi@yahoo.com'
+    }
+    return render_template('login.html', developer_info=developer_info)
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -194,10 +496,10 @@ def login():
         session['user_id'] = user.id
         session['user_role'] = user.role
         session['user_name'] = user.name
-        flash(f'Welcome back, {user.name}!', 'success')
+        flash(f'Bienvenue {user.name} !', 'success')
         return redirect(url_for('dashboard'))
     
-    flash('Invalid username or password', 'danger')
+    flash('Nom d\'utilisateur ou mot de passe incorrect', 'danger')
     return redirect(url_for('index'))
 
 @app.route('/logout')
@@ -366,6 +668,15 @@ def add_patient():
             if not request.form.get('last_name'):
                 raise ValueError("Le nom est obligatoire")
 
+            # Get selected symptoms and diagnostics
+            selected_symptoms = request.form.getlist('symptoms')
+            other_symptoms = request.form.get('other_symptoms')
+            symptoms_text = ', '.join(filter(None, selected_symptoms + [other_symptoms]))
+
+            selected_diagnostics = request.form.getlist('diagnostics')
+            other_diagnostic = request.form.get('other_diagnostic')
+            diagnostic_text = ', '.join(filter(None, selected_diagnostics + [other_diagnostic]))
+
             new_patient = Patient(
                 first_name=request.form.get('first_name'),
                 last_name=request.form.get('last_name'),
@@ -374,7 +685,8 @@ def add_patient():
                 weight=float(request.form.get('weight')) if request.form.get('weight') else None,
                 height=float(request.form.get('height')) if request.form.get('height') else None,
                 medical_history=request.form.get('medical_history'),
-                diagnostic=request.form.get('diagnostic'),
+                symptoms=symptoms_text,
+                diagnostic=diagnostic_text,
                 treatment=request.form.get('treatment')
             )
             
@@ -397,9 +709,9 @@ def add_patient():
                 appointment_id=today_appointment.id,
                 date=datetime.now(),
                 consultation_order=1,
-                diagnostic=request.form.get('diagnostic'),
+                symptoms=symptoms_text,
+                diagnostic=diagnostic_text,
                 treatment=request.form.get('treatment'),
-                symptoms=request.form.get('symptoms'),
                 notes=request.form.get('notes')
             )
             db.session.add(consultation)
@@ -458,60 +770,48 @@ def add_patient():
     services = Service.query.filter_by(is_active=True).all()
     return render_template('add_patient.html', 
                          today=datetime.now().date().isoformat(),
-                         services=services)
+                         services=services,
+                         symptomes=SYMPTOMES,
+                         diagnostics=DIAGNOSTICS)
 
 @app.route('/appointment/add', methods=['GET', 'POST'])
 def add_appointment():
     if 'user_id' not in session:
         return redirect(url_for('index'))
-    
-    if request.method == 'POST':
-        patient_type = request.form.get('patient_type')
-        appointment_date = datetime.strptime(request.form.get('date'), '%Y-%m-%d')
-        # Removed hour setting, default to start of day
-        appointment_datetime = appointment_date
 
-        if patient_type == 'new':
+    if request.method == 'POST':
+        try:
             # Créer un patient temporaire
             temp_patient = TemporaryPatient(
-                first_name=request.form.get('first_name'),
-                last_name=request.form.get('last_name'),
-                date_of_birth=datetime.strptime(request.form.get('date_of_birth'), '%Y-%m-%d').date(),
-                phone=request.form.get('phone')
+                first_name=request.form['first_name'],
+                last_name=request.form['last_name'],
+                date_of_birth=datetime.strptime(request.form['date_of_birth'], '%Y-%m-%d').date(),
+                phone=request.form.get('phone', '')
             )
             db.session.add(temp_patient)
-            db.session.flush()  # Pour obtenir l'ID du patient temporaire
-            
-            new_appointment = Appointment(
-                patient_id=None,  # Pas de patient permanent associé
+            db.session.flush()
+
+            # Créer le rendez-vous
+            appointment = Appointment(
                 temp_patient_id=temp_patient.id,
                 doctor_id=session['user_id'],
-                date=appointment_datetime,
-                reason=request.form.get('reason')
+                date=datetime.strptime(request.form['date'], '%Y-%m-%d'),
+                reason="Consultation de suivi",
+                status='scheduled'
             )
-        else:
-            new_appointment = Appointment(
-                patient_id=request.form.get('patient_id'),
-                doctor_id=session['user_id'],
-                date=appointment_datetime,
-                reason=request.form.get('reason')
-            )
+            db.session.add(appointment)
+            db.session.commit()
 
-        db.session.add(new_appointment)
-        db.session.commit()
-        
-        flash('Rendez-vous ajouté avec succès', 'success')
-        return redirect(url_for('dashboard'))
-    
-    patients = Patient.query.all()
+            flash('Rendez-vous ajouté avec succès', 'success')
+            return redirect(url_for('dashboard'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash('Erreur lors de la création du rendez-vous', 'danger')
+            return redirect(url_for('add_appointment'))
+
     today = datetime.now().date()
-    min_birth_date = today - timedelta(days=365*100)
-    
-    return render_template('add_appointment.html', 
-                         patients=patients,
-                         reasons=APPOINTMENT_REASONS,
-                         today=today,
-                         min_birth_date=min_birth_date)
+    return render_template('add_appointment.html', today=today)
 
 @app.route('/appointment/<int:appointment_id>/update', methods=['GET', 'POST'])
 def update_appointment(appointment_id):
@@ -668,8 +968,24 @@ def manage_services():
     services = Service.query.all()
     return render_template('manage_services.html', services=services)
 
+@app.route('/services/edit/<int:service_id>', methods=['GET', 'POST'])
+@require_doctor
+def edit_service(service_id):
+    service = Service.query.get_or_404(service_id)
+    if request.method == 'POST':
+        try:
+            service.name = request.form['name']
+            service.price = float(request.form['price'])
+            db.session.commit()
+            flash('Service modifié avec succès', 'success')
+            return redirect(url_for('manage_services'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Erreur lors de la modification du service', 'danger')
+    return render_template('edit_service.html', service=service)
+
 @app.route('/payment/add/<int:consultation_id>', methods=['POST'])
-def add_payment():
+def add_payment(consultation_id):  # Ajout du paramètre consultation_id
     consultation = Consultation.query.get_or_404(consultation_id)
     selected_services = request.form.getlist('services')
     services_data = []
@@ -734,24 +1050,76 @@ def convert_to_patient(temp_id):
 def edit_patient(patient_id):
     patient = Patient.query.get_or_404(patient_id)
     
-    if request.method == 'POST':
-        patient.first_name = request.form.get('first_name')
-        patient.last_name = request.form.get('last_name')
-        patient.date_of_birth = datetime.strptime(request.form.get('date_of_birth'), '%Y-%m-%d').date()
-        patient.phone = request.form.get('phone')
-        patient.medical_history = request.form.get('medical_history')
-        patient.weight = float(request.form.get('weight')) if request.form.get('weight') else None
-        patient.height = float(request.form.get('height')) if request.form.get('height') else None
-        patient.diagnostic = request.form.get('diagnostic')
-        patient.treatment = request.form.get('treatment')
-        
-        db.session.commit()
-        flash('Informations du patient mises à jour avec succès', 'success')
-        return redirect(url_for('patient_details', patient_id=patient.id))
+    # Get the latest consultation for this patient
+    latest_consultation = db.session.query(Consultation)\
+        .join(Appointment)\
+        .filter(Appointment.patient_id == patient_id)\
+        .order_by(Consultation.date.desc())\
+        .first()
     
-    return render_template('edit_patient.html', patient=patient)
+    if request.method == 'POST':
+        try:
+            patient.first_name = request.form.get('first_name')
+            patient.last_name = request.form.get('last_name')
+            patient.date_of_birth = datetime.strptime(request.form.get('date_of_birth'), '%Y-%m-%d').date()
+            patient.phone = request.form.get('phone')
+            patient.medical_history = request.form.get('medical_history')
+            patient.weight = float(request.form.get('weight')) if request.form.get('weight') else None
+            patient.height = float(request.form.get('height')) if request.form.get('height') else None
+            
+            # Update symptoms
+            selected_symptoms = request.form.getlist('symptoms')
+            other_symptoms = request.form.get('other_symptoms')
+            symptoms_text = ', '.join(filter(None, selected_symptoms + [other_symptoms]))
+            patient.symptoms = symptoms_text
+            
+            # Update diagnostic
+            selected_diagnostics = request.form.getlist('diagnostics')
+            other_diagnostic = request.form.get('other_diagnostic')
+            diagnostic_text = ', '.join(filter(None, selected_diagnostics + [other_diagnostic]))
+            patient.diagnostic = diagnostic_text
+            
+            patient.treatment = request.form.get('treatment')
+            
+            # Create new consultation if changes were made
+            if latest_consultation and (symptoms_text != latest_consultation.symptoms or 
+                                    diagnostic_text != latest_consultation.diagnostic or
+                                    patient.treatment != latest_consultation.treatment):
+                new_consultation = Consultation(
+                    appointment_id=latest_consultation.appointment.id,
+                    date=datetime.now(),
+                    consultation_order=latest_consultation.consultation_order + 1,
+                    symptoms=symptoms_text,
+                    diagnostic=diagnostic_text,
+                    treatment=patient.treatment
+                )
+                db.session.add(new_consultation)
+            
+            db.session.commit()
+            flash('Informations du patient mises à jour avec succès', 'success')
+            return redirect(url_for('patient_details', patient_id=patient.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating patient: {str(e)}")
+            flash('Une erreur est survenue lors de la mise à jour', 'danger')
+            return redirect(url_for('edit_patient', patient_id=patient_id))
+    
+    # For GET requests, prepare the symptoms list
+    patient_symptoms = []
+    if latest_consultation and latest_consultation.symptoms:
+        patient_symptoms = [s.strip() for s in latest_consultation.symptoms.split(',')]
+    elif patient.symptoms:
+        patient_symptoms = [s.strip() for s in patient.symptoms.split(',')]
+    
+    return render_template('edit_patient.html',
+                         patient=patient,
+                         patient_symptoms=patient_symptoms,
+                         latest_consultation=latest_consultation,
+                         symptomes=SYMPTOMES,
+                         diagnostics=DIAGNOSTICS)
 
-@app.route('/billing')
+@app.route('/billing', methods=['GET', 'POST'])
 @require_doctor
 def billing():
     try:
@@ -764,7 +1132,49 @@ def billing():
             .order_by(Payment.date.desc())\
             .all()
 
-        return render_template('billing.html', payments=payments)
+        # Statistics logic
+        today = datetime.now().date()
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+
+        # Default period (current month)
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+        if start_date and end_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        else:
+            start_date = today.replace(day=1)
+            end_date = today
+
+        total_patients = Patient.query.count()
+        consultations_today = Consultation.query.filter(
+            func.date(Consultation.date) == today
+        ).count()
+        consultations_this_week = Consultation.query.filter(
+            func.date(Consultation.date) >= start_of_week,
+            func.date(Consultation.date) <= end_of_week
+        ).count()
+        consultations_in_period = Consultation.query.filter(
+            func.date(Consultation.date) >= start_date,
+            func.date(Consultation.date) <= end_date
+        ).count()
+        revenue_in_period = db.session.query(func.sum(Payment.amount))\
+            .filter(
+                Payment.paid == True,
+                func.date(Payment.date) >= start_date,
+                func.date(Payment.date) <= end_date
+            ).scalar() or 0
+
+        return render_template('billing.html', 
+                               payments=payments,
+                               total_patients=total_patients,
+                               consultations_today=consultations_today,
+                               consultations_this_week=consultations_this_week,
+                               consultations_in_period=consultations_in_period,
+                               revenue_in_period=revenue_in_period,
+                               start_date=start_date,
+                               end_date=end_date)
     except Exception as e:
         print(f"Erreur dans la page de facturation: {str(e)}")
         flash("Une erreur s'est produite lors du chargement des factures", 'danger')
@@ -815,6 +1225,22 @@ def profile():
             settings.app_name = request.form.get('app_name')
             settings.primary_color = request.form.get('primary_color')
             settings.last_updated = datetime.utcnow()
+            
+            # Traitement de l'image d'en-tête
+            header_image = request.files.get('header_image')
+            if header_image:
+                settings.header_image = header_image.read()
+                settings.header_image_type = header_image.content_type
+
+            # Traitement de l'image du cachet
+            stamp_image = request.files.get('stamp_image')
+            if stamp_image:
+                settings.stamp_image = stamp_image.read()
+                settings.stamp_image_type = stamp_image.content_type
+
+            # Mise à jour du texte du pied de page
+            settings.footer_text = request.form.get('footer_text')
+            
             flash('Paramètres de l\'application mis à jour', 'success')
             
         db.session.commit()
@@ -833,65 +1259,49 @@ def generate_sick_leave(patient_id):
     end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d')
     reason = request.form.get('reason')
     
-    # Créer un nouveau document
-    doc = Document()
+    """
+    ...existing code...
+    """
+
+@app.route('/preview/sick-leave/<int:patient_id>', methods=['POST'])
+@require_doctor
+def preview_sick_leave(patient_id):
+    patient = Patient.query.get_or_404(patient_id)
+    doctor = User.query.get(session['user_id'])
+    settings = AppSettings.get_settings()
     
-    # Marges
-    sections = doc.sections
-    for section in sections:
-        section.top_margin = Cm(1)
-        section.bottom_margin = Cm(1)
-        section.left_margin = Cm(1)
-        section.right_margin = Cm(1)
-        section.page_height = Cm(21)  # A5 height
-        section.page_width = Cm(14.8)  # A5 width
+    start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d')
+    end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d')
+    reason = request.form.get('reason')
     
-    # En-tête
-    doc.add_heading(settings.app_name, 0).alignment = 1
-    if settings.clinic_address:
-        doc.add_paragraph(settings.clinic_address).alignment = 1
+    return render_template('sick_leave.html',
+                         patient=patient,
+                         doctor=doctor,
+                         app_settings=settings,
+                         start_date=start_date,
+                         end_date=end_date,
+                         reason=reason,
+                         today=datetime.now())
+
+@app.route('/preview/chronic-disease/<int:patient_id>', methods=['POST'])
+@require_doctor
+def preview_chronic_disease(patient_id):
+    patient = Patient.query.get_or_404(patient_id)
+    doctor = User.query.get(session['user_id'])
+    settings = AppSettings.get_settings()
     
-    # Info médecin
-    p = doc.add_paragraph()
-    p.alignment = 2  # Right aligned
-    p.add_run(f"Dr. {doctor.name}\n{doctor.speciality}")
+    disease = request.form['disease']
+    disease_start = datetime.strptime(request.form['disease_start'], '%Y-%m-%d')
+    notes = request.form.get('notes')
     
-    # Titre
-    doc.add_heading("CERTIFICAT D'ARRÊT DE TRAVAIL", 1).alignment = 1
-    
-    # Contenu
-    doc.add_paragraph(f"Je soussigné(e), Dr. {doctor.name}, certifie avoir examiné ce jour :")
-    
-    # Info patient
-    p = doc.add_paragraph()
-    p.add_run(f"{patient.first_name} {patient.last_name}\n").bold = True
-    p.add_run(f"Né(e) le : {patient.date_of_birth.strftime('%d/%m/%Y')}")
-    
-    # Dates
-    doc.add_paragraph("Et prescrit un arrêt de travail pour la période suivante :")
-    p = doc.add_paragraph()
-    p.add_run(f"Du : {start_date.strftime('%d/%m/%Y')}\n")
-    p.add_run(f"Au : {end_date.strftime('%d/%m/%Y')} inclus\n")
-    days = (end_date - start_date).days + 1
-    p.add_run(f"Soit une durée de : {days} jours")
-    
-    if reason:
-        doc.add_paragraph(f"Motif : {reason}")
-    
-    # Signature
-    doc.add_paragraph(f"\nFait à _________________, le {datetime.now().strftime('%d/%m/%Y')}", style='Normal').alignment = 2
-    doc.add_paragraph("\nSignature et cachet :", style='Normal').alignment = 2
-    
-    # Sauvegarder dans un buffer
-    f = BytesIO()
-    doc.save(f)
-    f.seek(0)
-    
-    response = make_response(f.read())
-    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    response.headers['Content-Disposition'] = f'attachment; filename=arret_travail_{patient.last_name}_{start_date.strftime("%Y%m%d")}.docx'
-    
-    return response
+    return render_template('chronic_disease.html',
+                         patient=patient,
+                         doctor=doctor,
+                         app_settings=settings,
+                         disease=disease,
+                         disease_start=disease_start,
+                         notes=notes,
+                         today=datetime.now())
 
 @app.route('/patient/<int:patient_id>/chronic-disease', methods=['POST'])
 @require_doctor
@@ -904,62 +1314,47 @@ def generate_chronic_disease(patient_id):
     disease_start = datetime.strptime(request.form['disease_start'], '%Y-%m-%d')
     notes = request.form.get('notes')
     
-    # Créer un nouveau document
-    doc = Document()
+    """
+    ...existing code...
+    """
+
+@app.route('/export/consultations')
+@require_doctor
+def export_consultations():
+    consultations = Consultation.query.all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Date', 'Patient', 'Diagnostic', 'Traitement'])
     
-    # Marges A5
-    sections = doc.sections
-    for section in sections:
-        section.top_margin = Cm(1)
-        section.bottom_margin = Cm(1)
-        section.left_margin = Cm(1)
-        section.right_margin = Cm(1)
-        section.page_height = Cm(21)  # A5 height
-        section.page_width = Cm(14.8)  # A5 width
+    for consultation in consultations:
+        writer.writerow([
+            consultation.date,
+            f"{consultation.appointment.patient.first_name} {consultation.appointment.patient.last_name}",
+            consultation.diagnostic,
+            consultation.treatment
+        ])
     
-    # En-tête
-    doc.add_heading(settings.app_name, 0).alignment = 1
-    if settings.clinic_address:
-        doc.add_paragraph(settings.clinic_address).alignment = 1
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=consultations.csv'}
+    )
+
+@app.route('/statistics')
+@require_doctor
+def statistics():
+    current_month = datetime.now().month
+    total_patients = Patient.query.count()
+    monthly_consultations = Consultation.query.filter(
+        func.extract('month', Consultation.date) == current_month
+    ).count()
+    revenue = db.session.query(func.sum(Payment.amount))\
+        .filter(Payment.paid == True).scalar() or 0
     
-    # Info médecin
-    p = doc.add_paragraph()
-    p.alignment = 2
-    p.add_run(f"Dr. {doctor.name}\n{doctor.speciality}")
-    
-    # Titre
-    doc.add_heading("CERTIFICAT DE MALADIE CHRONIQUE", 1).alignment = 1
-    
-    # Contenu
-    doc.add_paragraph(f"Je soussigné(e), Dr. {doctor.name}, certifie que :")
-    
-    # Info patient
-    p = doc.add_paragraph()
-    p.add_run(f"{patient.first_name} {patient.last_name}\n").bold = True
-    p.add_run(f"Né(e) le : {patient.date_of_birth.strftime('%d/%m/%Y')}")
-    
-    # Maladie
-    doc.add_paragraph(f"Est atteint(e) de ").add_run(disease).bold = True
-    doc.add_paragraph(f"depuis le {disease_start.strftime('%d/%m/%Y')}.")
-    
-    if notes:
-        doc.add_paragraph("Observations complémentaires :")
-        doc.add_paragraph(notes).style = 'Quote'
-    
-    # Signature
-    doc.add_paragraph(f"\nFait à _________________, le {datetime.now().strftime('%d/%m/%Y')}", style='Normal').alignment = 2
-    doc.add_paragraph("\nSignature et cachet :", style='Normal').alignment = 2
-    
-    # Sauvegarder dans un buffer
-    f = BytesIO()
-    doc.save(f)
-    f.seek(0)
-    
-    response = make_response(f.read())
-    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    response.headers['Content-Disposition'] = f'attachment; filename=certificat_maladie_chronique_{patient.last_name}.docx'
-    
-    return response
+    return render_template('statistics.html',
+                         total_patients=total_patients,
+                         monthly_consultations=monthly_consultations,
+                         revenue=revenue)
 
 # Initialize the database
 with app.app_context():
@@ -976,7 +1371,7 @@ with app.app_context():
                 role='doctor'
             )
             db.session.add(doctor)
-            
+        
         # Créer le compte assistant par défaut
         if not User.query.filter_by(role='assistant').first():
             assistant = User(

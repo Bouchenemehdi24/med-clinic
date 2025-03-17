@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Statistiques - Clinique Médicale{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-chart-line"></i> Statistiques</h2>
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="exportStats()">
+                <i class="fas fa-file-excel"></i> Exporter
+            </button>
+            <button class="btn btn-info" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimer
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Total Patients -->
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-users"></i> Total Patients
+                    </h5>
+                    <h2 class="display-4">{{ total_patients }}</h2>
+                    <p class="mb-0">Patients enregistrés</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consultations du mois -->
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-calendar-check"></i> Consultations (ce mois)
+                    </h5>
+                    <h2 class="display-4">{{ monthly_consultations }}</h2>
+                    <p class="mb-0">Consultations effectuées</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recettes -->
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-money-bill-wave"></i> Recettes
+                    </h5>
+                    <h2 class="display-4">{{ revenue }} DA</h2>
+                    <p class="mb-0">Total des paiements reçus</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Graphique d'activité</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('activityChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+            datasets: [{
+                label: 'Consultations par jour',
+                data: [12, 19, 15, 17, 14, 8, 0],
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+});
+
+function exportStats() {
+    // Fonction pour exporter les statistiques
+    window.location.href = "{{ url_for('export_consultations') }}";
+}
+</script>
+{% endblock %}

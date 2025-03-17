@@ -54,6 +54,119 @@
                 <textarea class="form-control" id="medical_history" name="medical_history" rows="4">{{ patient.medical_history or '' }}</textarea>
             </div>
 
+            <!-- Symptoms section -->
+            <div class="mb-3">
+                <label class="form-label h5"><i class="fas fa-heartbeat"></i> Symptômes</label>
+                <div class="input-group mb-2">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" 
+                           class="form-control form-control-lg"
+                           id="symptoms-search" 
+                           placeholder="Rechercher des symptômes..."
+                           autocomplete="off">
+                </div>
+                <div class="symptoms-container border rounded p-3 bg-light" style="max-height: 400px; overflow-y: auto;">
+                    <div class="accordion custom-accordion" id="symptomsAccordion">
+                        {% for category, symptoms in symptomes.items() %}
+                        <div class="accordion-item symptom-category border-0 mb-2">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-primary bg-opacity-10" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#category{{ loop.index }}">
+                                    <i class="fas fa-folder me-2"></i> {{ category }}
+                                    <span class="badge bg-primary ms-2 category-count">0</span>
+                                </button>
+                            </h2>
+                            <div id="category{{ loop.index }}" class="accordion-collapse collapse">
+                                <div class="accordion-body bg-white rounded-bottom shadow-sm">
+                                    <div class="row symptoms-list">
+                                        {% for symptom in symptoms %}
+                                        <div class="col-md-6 mb-2 symptom-item">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="symptoms" 
+                                                       value="{{ symptom }}" 
+                                                       id="symptom_{{ category }}_{{ loop.index }}"
+                                                       {% if symptom in patient_symptoms or (latest_consultation and symptom in latest_consultation.symptoms.split(',')) %}checked{% endif %}>
+                                                <label class="form-check-label" 
+                                                       for="symptom_{{ category }}_{{ loop.index }}">
+                                                    {{ symptom }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label">
+                            <i class="fas fa-plus-circle"></i> Autres symptômes
+                        </label>
+                        <textarea class="form-control" name="other_symptoms" rows="2"
+                                placeholder="Ajoutez d'autres symptômes...">{% if latest_consultation %}{{ latest_consultation.symptoms }}{% else %}{{ patient.symptoms }}{% endif %}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label h5"><i class="fas fa-stethoscope"></i> Diagnostic</label>
+                <div class="input-group mb-2">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" 
+                           class="form-control form-control-lg"
+                           id="diagnostic-search" 
+                           placeholder="Rechercher un diagnostic..."
+                           autocomplete="off">
+                </div>
+                <div class="diagnostic-container border rounded p-3 bg-light" style="max-height: 300px; overflow-y: auto;">
+                    <div class="accordion custom-accordion" id="diagnosticAccordion">
+                        {% for category, diagnoses in diagnostics.items() %}
+                        <div class="accordion-item diagnostic-category border-0 mb-2">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-info bg-opacity-10" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#diagnostic{{ loop.index }}">
+                                    <i class="fas fa-folder-open me-2"></i> {{ category }}
+                                    <span class="badge bg-info ms-2 category-count">0</span>
+                                </button>
+                            </h2>
+                            <div id="diagnostic{{ loop.index }}" class="accordion-collapse collapse">
+                                <div class="accordion-body bg-white rounded-bottom shadow-sm">
+                                    <div class="row">
+                                        {% for diagnosis in diagnoses %}
+                                        <div class="col-md-6 mb-2 diagnostic-item">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="diagnostics" 
+                                                       value="{{ diagnosis }}"
+                                                       id="diagnostic_{{ category }}_{{ loop.index }}"
+                                                       {% if diagnosis in patient_diagnostics %}checked{% endif %}>
+                                                <label class="form-check-label" 
+                                                       for="diagnostic_{{ category }}_{{ loop.index }}">
+                                                    {{ diagnosis }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label">
+                            <i class="fas fa-plus-circle"></i> Autre diagnostic
+                        </label>
+                        <textarea class="form-control" name="other_diagnostic" rows="2"
+                                  placeholder="Ajoutez un diagnostic non présent dans la liste..."></textarea>
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-3">
                 <label for="diagnostic" class="form-label">Diagnostic</label>
                 <textarea class="form-control" id="diagnostic" name="diagnostic" rows="3">{{ patient.diagnostic or '' }}</textarea>
@@ -70,4 +183,155 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- ...existing scripts... -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pré-sélectionner les symptômes existants
+    const existingSymptoms = {% if latest_consultation %}{{ latest_consultation.symptoms|tojson|safe }}{% else %}{{ patient.symptoms|tojson|safe }}{% endif %};
+    if (existingSymptoms) {
+        const symptomsList = existingSymptoms.split(',').map(s => s.trim());
+        symptomsList.forEach(symptom => {
+            const checkbox = document.querySelector(`input[name="symptoms"][value="${symptom}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+    }
+
+    // Pré-sélectionner les diagnostics existants
+    const existingDiagnostics = {% if latest_consultation %}{{ latest_consultation.diagnostic|tojson|safe }}{% else %}{{ patient.diagnostic|tojson|safe }}{% endif %};
+    if (existingDiagnostics) {
+        const diagnosticsList = existingDiagnostics.split(',').map(d => d.trim());
+        diagnosticsList.forEach(diagnostic => {
+            const checkbox = document.querySelector(`input[name="diagnostics"][value="${diagnostic}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+    }
+
+    // Mettre à jour les compteurs après la pré-sélection
+    updateCategoryCounts();
+});
+
+document.getElementById('diagnostic-search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const items = document.getElementsByClassName('diagnostic-item');
+    const categories = document.getElementsByClassName('diagnostic-category');
+    let hasVisibleDiagnostics = {};
+
+    Array.from(items).forEach(item => {
+        const label = item.querySelector('label').textContent.toLowerCase();
+        const category = item.closest('.accordion-item');
+        const isVisible = label.includes(searchTerm);
+        item.style.display = isVisible ? '' : 'none';
+        
+        if (isVisible) {
+            hasVisibleDiagnostics[category.id] = true;
+        }
+    });
+
+    Array.from(categories).forEach(category => {
+        category.style.display = hasVisibleDiagnostics[category.id] ? '' : 'none';
+        if (hasVisibleDiagnostics[category.id] && searchTerm) {
+            category.querySelector('.accordion-collapse').classList.add('show');
+        }
+    });
+});
+
+function updateSelectedDiagnostics() {
+    const selectedDiagnostics = Array.from(document.querySelectorAll('input[name="diagnostics"]:checked'))
+        .map(cb => cb.value)
+        .join(', ');
+    
+    const otherDiagnostic = document.querySelector('textarea[name="other_diagnostic"]').value;
+    
+    const allDiagnostics = [selectedDiagnostics, otherDiagnostic].filter(Boolean).join('\n');
+    document.querySelector('textarea[name="diagnostic"]').value = allDiagnostics;
+}
+
+document.querySelectorAll('input[name="diagnostics"]').forEach(checkbox => {
+    checkbox.addEventListener('change', updateSelectedDiagnostics);
+});
+
+document.querySelectorAll('input[name="symptoms"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        updateSelectedSymptoms();
+    });
+});
+
+function updateSelectedSymptoms() {
+    const selectedSymptoms = Array.from(document.querySelectorAll('input[name="symptoms"]:checked'))
+        .map(cb => cb.value)
+        .join(', ');
+    
+    const otherSymptoms = document.querySelector('textarea[name="other_symptoms"]').value;
+    
+    const allSymptoms = [selectedSymptoms, otherSymptoms].filter(Boolean).join('\n');
+    document.querySelector('textarea[name="symptoms"]').value = allSymptoms;
+}
+
+// Initialize category counts on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateCategoryCounts();
+});
+
+function updateCategoryCounts() {
+    // Mise à jour des compteurs pour les symptômes
+    document.querySelectorAll('.symptom-category').forEach(category => {
+        const checkedCount = category.querySelectorAll('input[name="symptoms"]:checked').length;
+        const countBadge = category.querySelector('.category-count');
+        if (countBadge) {
+            countBadge.textContent = checkedCount;
+            countBadge.style.display = checkedCount > 0 ? '' : 'none';
+        }
+    });
+
+    // Mise à jour des compteurs pour les diagnostics
+    document.querySelectorAll('.diagnostic-category').forEach(category => {
+        const checkedCount = category.querySelectorAll('input[name="diagnostics"]:checked').length;
+        const countBadge = category.querySelector('.category-count');
+        if (countBadge) {
+            countBadge.textContent = checkedCount;
+            countBadge.style.display = checkedCount > 0 ? '' : 'none';
+        }
+    });
+}
+</script>
+
+<style>
+.custom-accordion .accordion-button {
+    border-radius: 6px;
+    margin-bottom: 2px;
+}
+
+.custom-accordion .accordion-button:not(.collapsed) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.custom-accordion .accordion-body {
+    padding: 1rem;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.diagnostic-item:hover {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.form-check-input:checked + .form-check-label {
+    font-weight: bold;
+    color: #0d6efd;
+}
+
+.category-count {
+    min-width: 24px;
+}
+</style>
 {% endblock %}

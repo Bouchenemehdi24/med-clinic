@@ -93,6 +93,34 @@
                             <input type="file" class="form-control" name="clinic_logo" accept="image/*">
                         </div>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">En-tête des Documents</label>
+                        <input type="file" class="form-control" name="header_image" accept="image/*">
+                        {% if settings.header_image %}
+                        <div class="mt-2">
+                            <img src="data:{{ settings.header_image_type }};base64,{{ settings.header_image|b64encode }}" 
+                                 class="img-thumbnail" style="max-height: 100px">
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Cachet</label>
+                        <input type="file" class="form-control" name="stamp_image" accept="image/*">
+                        {% if settings.stamp_image %}
+                        <div class="mt-2">
+                            <img src="data:{{ settings.stamp_image_type }};base64,{{ settings.stamp_image|b64encode }}" 
+                                 class="img-thumbnail" style="max-height: 100px">
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Texte du Pied de Page</label>
+                        <textarea class="form-control" name="footer_text" rows="2">{{ settings.footer_text }}</textarea>
+                        <small class="text-muted">Ce texte apparaîtra en bas de tous les documents</small>
+                    </div>
                     
                     <button type="submit" class="btn btn-success">
                         Enregistrer les changements

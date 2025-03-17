@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime  # Ajout de l'import manquant
 
 db = SQLAlchemy()
 
@@ -37,3 +38,37 @@ class AppSettings(db.Model):
     clinic_address = db.Column(db.Text)  # Ajout de l'adresse
     primary_color = db.Column(db.String(20), default='#0d6efd')
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+    header_image = db.Column(db.LargeBinary)  # Image d'en-tête
+    header_image_type = db.Column(db.String(32))  # Type MIME de l'image
+    footer_text = db.Column(db.Text)  # Texte du pied de page
+    stamp_image = db.Column(db.LargeBinary)  # Image du cachet
+    stamp_image_type = db.Column(db.String(32))  # Type MIME du cachet
+
+class MedicalDocument(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'))
+    type = db.Column(db.String(50))  # 'xray', 'blood_test', 'scan'
+    file_name = db.Column(db.String(200))
+    file_path = db.Column(db.String(500))
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    notes = db.Column(db.Text)
+
+class Prescription(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    consultation_id = db.Column(db.Integer, db.ForeignKey('consultation.id'), nullable=False)
+    medication_name = db.Column(db.String(100), nullable=False)
+    dosage = db.Column(db.String(100))
+    frequency = db.Column(db.String(100))
+    duration = db.Column(db.String(50))
+    special_instructions = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Notification system without external services
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    title = db.Column(db.String(100))
+    message = db.Column(db.Text)
+    type = db.Column(db.String(20))  # 'appointment', 'system'
+    read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

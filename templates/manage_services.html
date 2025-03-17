@@ -30,23 +30,23 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table">
+                        <table class="table table-striped">
                             <thead>
                                 <tr>
                                     <th>Service</th>
-                                    <th>Prix</th>
+                                    <th>Prix (DA)</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for service in services %}
-                                <tr id="service-row-{{ service.id }}">
-                                    <td class="service-name">{{ service.name }}</td>
-                                    <td class="service-price">{{ service.price }} DA</td>
+                                <tr>
+                                    <td>{{ service.name }}</td>
+                                    <td>{{ service.price }}</td>
                                     <td>
-                                        <button class="btn btn-sm btn-warning" onclick="editService({{ service.id }})">
-                                            Modifier
-                                        </button>
+                                        <a href="{{ url_for('edit_service', service_id=service.id) }}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i> Modifier
+                                        </a>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -90,10 +90,10 @@ function saveService(serviceId) {
     const newName = row.querySelector('.service-name input').value;
     const newPrice = row.querySelector('.service-price input').value;
 
-    fetch('/services/update-service', {  // Updated endpoint
+    fetch('/services/update-service', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify({
             id: serviceId,
